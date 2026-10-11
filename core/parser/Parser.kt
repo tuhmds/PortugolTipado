@@ -202,6 +202,7 @@ class Parser(
     private fun ehTokenDeTipo(tipo: TipoToken): Boolean = tipo in setOf(
         TipoToken.INTEIRO, TipoToken.REAL, TipoToken.DUPLO, TipoToken.TEXTO_TIPO,
         TipoToken.CARACTERE_TIPO, TipoToken.LOGICO, TipoToken.VAZIO, TipoToken.TEMPO,
+        TipoToken.PONTEIRO,
         TipoToken.ESTRUTURA
     )
 
@@ -228,6 +229,7 @@ class Parser(
             TipoToken.LOGICO -> TipoDado.LOGICO
             TipoToken.VAZIO -> TipoDado.VAZIO
             TipoToken.TEMPO -> TipoDado.TEMPO
+            TipoToken.PONTEIRO -> TipoDado.PONTEIRO_OPACO
             else -> throw ErroSintatico("esperado um tipo válido (inteiro, real, texto...)", tipoToken.linha, fonte, nomeArquivo)
         }
         avancar()
