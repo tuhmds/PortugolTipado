@@ -502,20 +502,31 @@ class Transpilador(
 
     /** Só é chamada para funções com corpo != null (ver filtro em transpilarModulo). */
     private fun transpilarFuncao(funcao: DeclaracaoFuncao): String {
+        // Parametros e locais pertencem apenas a esta funcao. Sem restaurar
+        // o contexto, inferencia posterior pode enxergar tipos de outra funcao.
+        val tiposAntes = tiposVariaveis.toMap()
+        val buffersAntes = nomesBufferTexto.toSet()
         nomesBufferTexto.clear()
-        val sb = StringBuilder()
-        val params = funcao.parametros.joinToString(", ") { p ->
-            tiposVariaveis[p.nome] = p.tipo
-            val tipoC = (if (p.ehConstante) "const " else "") + tipoParaC(p.tipo)
-            if (p.ehAlterar) "$tipoC *${p.nome}" else "$tipoC ${p.nome}"
+        try {
+            val sb = StringBuilder()
+            val params = funcao.parametros.joinToString(", ") { p ->
+                tiposVariaveis[p.nome] = p.tipo
+                val tipoC = (if (p.ehConstante) "const " else "") + tipoParaC(p.tipo)
+                if (p.ehAlterar) "$tipoC *${p.nome}" else "$tipoC ${p.nome}"
+            }
+            sb.append("${tipoParaC(funcao.tipoRetorno)} ${funcao.nome}($params) {\n")
+            val parametrosAlterar = funcao.parametros.filter { it.ehAlterar }.map { it.nome }.toSet()
+            for (comando in funcao.corpo.orEmpty()) {
+                sb.append(transpilarComando(comando, nivel = 1, parametrosAlterar = parametrosAlterar))
+            }
+            sb.append("}\n")
+            return sb.toString()
+        } finally {
+            tiposVariaveis.clear()
+            tiposVariaveis.putAll(tiposAntes)
+            nomesBufferTexto.clear()
+            nomesBufferTexto.addAll(buffersAntes)
         }
-        sb.append("${tipoParaC(funcao.tipoRetorno)} ${funcao.nome}($params) {\n")
-
-        for (comando in funcao.corpo.orEmpty()) {
-            sb.append(transpilarComando(comando, nivel = 1, parametrosAlterar = funcao.parametros.filter { it.ehAlterar }.map { it.nome }.toSet()))
-        }
-        sb.append("}\n")
-        return sb.toString()
     }
 
     // -------------------------------------------------------------
