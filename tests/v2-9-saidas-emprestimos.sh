@@ -250,4 +250,13 @@ funcao quebrar(const ponteiro p): vazio {
 }
 funcao inicio() {}'
 
+rejeitar "emprestimo_e_move_simultaneos" "nao pode ser emprestado e transferido na mesma chamada" '
+funcao misturar(const ponteiro emprestado, ponteiro dono): vazio {
+    libere(dono)
+}
+funcao inicio() {
+    ponteiro p = aloque(16)
+    misturar(p, p)
+}'
+
 echo "V2.9: saidas e emprestimos verificados."
