@@ -51,11 +51,11 @@ jobs:
               leia(nome)
           }
           EOF
-          if java -jar core/build/libs/port.jar -o /tmp/ler_ponteiro.c /tmp/ler_ponteiro.port > /tmp/saida.log 2>&1; then
+          if java -jar core/build/libs/port.jar --tipagem=segura -o /tmp/ler_ponteiro.c /tmp/ler_ponteiro.port > /tmp/saida.log 2>&1; then
             echo 'ERRO: leia em texto sem buffer gravavel foi aceito'
             exit 1
           fi
-          grep -q 'buffer local gravavel' /tmp/saida.log
+          grep -q 'Não é possível ler para este texto em modo seguro' /tmp/saida.log
 
       - name: Copia e concatenacao incluindo sobreposicao
         run: |
@@ -83,11 +83,11 @@ jobs:
               copie(nome, "Bia")
           }
           EOF
-          if java -jar core/build/libs/port.jar -o /tmp/copia_ponteiro.c /tmp/copia_ponteiro.port > /tmp/saida.log 2>&1; then
+          if java -jar core/build/libs/port.jar --tipagem=segura -o /tmp/copia_ponteiro.c /tmp/copia_ponteiro.port > /tmp/saida.log 2>&1; then
             echo 'ERRO: copia sobre ponteiro de tamanho desconhecido foi aceita'
             exit 1
           fi
-          grep -q 'buffer local de texto' /tmp/saida.log
+          grep -q 'Não é possível escrever neste texto em modo seguro' /tmp/saida.log
 
       - name: Sombra de texto nao pode liberar escrita em literal
         run: |
@@ -100,11 +100,11 @@ jobs:
               }
           }
           EOF
-          if java -jar core/build/libs/port.jar -o /tmp/sombra_texto.c /tmp/sombra_texto.port > /tmp/saida_sombra.log 2>&1; then
+          if java -jar core/build/libs/port.jar --tipagem=segura -o /tmp/sombra_texto.c /tmp/sombra_texto.port > /tmp/saida_sombra.log 2>&1; then
             echo 'ERRO: confusao de buffers homonimos entre escopos'
             exit 1
           fi
-          grep -q 'buffer local gravavel' /tmp/saida_sombra.log
+          grep -q 'Não é possível ler para este texto em modo seguro' /tmp/saida_sombra.log
 
       - name: Buffer de bloco interno nao pode escapar para parametro
         run: |
@@ -117,8 +117,11 @@ jobs:
           }
           funcao inicio() {}
           EOF
-          if java -jar core/build/libs/port.jar -o /tmp/sombra_parametro.c /tmp/sombra_parametro.port > /tmp/saida_parametro.log 2>&1; then
+          if java -jar core/build/libs/port.jar --tipagem=segura -o /tmp/sombra_parametro.c /tmp/sombra_parametro.port > /tmp/saida_parametro.log 2>&1; then
             echo 'ERRO: buffer de bloco interno escapou para parametro'
             exit 1
           fi
-          grep -q 'buffer local gravavel' /tmp/saida_parametro.log
+          grep -q 'Não é possível ler para este texto em modo seguro' /tmp/saida_parametro.log
+
+      - name: Compatibilidade do modo normal e interpretador
+        run: bash tests/v2-2-compatibilidade-textos.sh
