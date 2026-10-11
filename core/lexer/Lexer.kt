@@ -8,7 +8,7 @@ enum class TipoToken {
     NUMERO_INTEIRO, NUMERO_DECIMAL, TEXTO, CARACTERE, IDENTIFICADOR,
 
     // Palavras-chave de tipo
-    INTEIRO, REAL, DUPLO, TEXTO_TIPO, CARACTERE_TIPO, LOGICO, VAZIO, TEMPO,
+    INTEIRO, REAL, DUPLO, TEXTO_TIPO, CARACTERE_TIPO, LOGICO, VAZIO, TEMPO, PONTEIRO,
 
     // Modificadores de tipo (combinam com INTEIRO/DUPLO: "inteiro longo", "duplo longo", "inteiro longo longo")
     LONGO, CURTO, POSITIVO,
@@ -75,6 +75,7 @@ class Lexer(
             "logico" to TipoToken.LOGICO,
             "vazio" to TipoToken.VAZIO,
             "tempo" to TipoToken.TEMPO,
+            "ponteiro" to TipoToken.PONTEIRO,
 
             // modificadores de tipo — combinam com o tipo anterior (ver Parser)
             "longo" to TipoToken.LONGO,
