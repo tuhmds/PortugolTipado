@@ -128,7 +128,7 @@ funcao inicio() {
     }
 }'
 
-rejeitar "declara_condicional" "declaracao de ponteiro em ramificacao" '
+aceitar "declara_condicional" "" '
 funcao inicio() {
     se (verdadeiro) {
         ponteiro bloco = aloque(16)
