@@ -10,6 +10,7 @@ on:
       - feature/v2-5-tipos-nativos-c
       - feature/v2-6-ownership-basico
       - feature/v2-7-fluxo-transferencia
+      - feature/v2-8-escopos-lacos
   pull_request:
   workflow_dispatch:
 
