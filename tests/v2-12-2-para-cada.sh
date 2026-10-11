@@ -139,6 +139,17 @@ funcao inicio() {
 }
 PORT
 
+executar "indice_gerado_nao_colide_com_usuario" "1299" "segura" <<'PORT'
+funcao inicio() {
+    inteiro port_indice_cada_0 = 99
+    inteiro dados[2] = {1, 2}
+    para cada (inteiro valor em dados) {
+        escreva(valor)
+    }
+    escreva(port_indice_cada_0)
+}
+PORT
+
 rejeitar "cada_nao_array" "exige array" <<'PORT'
 funcao inicio() {
     inteiro dado = 1
