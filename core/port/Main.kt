@@ -105,6 +105,8 @@ fun main(args: Array<String>) {
         if (tipagemSeguraV2) {
             co.adilson889.typec.validador.ChecagemSeguraV2(fonte)
                 .validar(resolucao.programa, resolucao.modulos)
+            co.adilson889.typec.validador.AnaliseOwnershipV26(fonte)
+                .validar(resolucao.programa, resolucao.modulos)
         }
         val codigo = Transpilador(tipagemSegura = tipagemSeguraV2)
             .transpilarUnico(resolucao.programa, resolucao.modulos)
