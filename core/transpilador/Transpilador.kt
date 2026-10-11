@@ -139,6 +139,7 @@ class Transpilador(
     // o #include entra sozinho, o utilizador nunca escreve 'inclua' para elas
     private val cabecalhosAutomaticos = linkedSetOf<String>()
     private var contadorEscolhaTexto = 0
+    private var contadorParaCada = 0
 
     // Variáveis de texto que viraram buffer próprio (char nome[N]): nelas sizeof(nome) é o tamanho real
     private val nomesBufferTexto = mutableSetOf<String>()
@@ -186,6 +187,7 @@ class Transpilador(
         usouStrcmp = false
         cabecalhosAutomaticos.clear()
         contadorEscolhaTexto = 0
+        contadorParaCada = 0
         memoria.reiniciar()
         nomesBufferTexto.clear()
 
@@ -787,7 +789,13 @@ class Transpilador(
         try {
             val ind = indentacao(nivel)
             val sb = StringBuilder()
-            val indiceInterno = "_i"
+            // Indice interno unico: o elemento pode chamar-se _i ou ter
+            // o mesmo nome de outro indice gerado anteriormente.
+            var indiceInterno: String
+            do {
+                indiceInterno = "port_indice_cada_" + contadorParaCada++
+            } while (indiceInterno == cmd.nomeElemento ||
+                indiceInterno in tiposVariaveis)
             val nomeArray = transpilarExpressao(cmd.array, parametrosAlterar)
             val tamanho = inferirTamanhoArray(cmd.array)
 
