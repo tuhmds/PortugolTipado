@@ -14,7 +14,7 @@ enum class TipoToken {
     LONGO, CURTO, POSITIVO,
 
     // Palavras-chave estruturais
-    INICIO, INCLUA, FUNCAO, RETORNA, ALTERAR, ESTRUTURA, CONST,
+    INICIO, INCLUA, FUNCAO, RETORNA, ALTERAR, ESTRUTURA, CONST, SEJA,
 
     // Palavras-chave de controle
     SE, SENAO, ENQUANTO, FACA, PARA, CADA, EM, DISPENSAR, IGNORAR,
@@ -91,6 +91,7 @@ class Lexer(
             "alterar" to TipoToken.ALTERAR,
             "estrutura" to TipoToken.ESTRUTURA,
             "const" to TipoToken.CONST,
+            "seja" to TipoToken.SEJA,
 
             "se" to TipoToken.SE,
             "senao" to TipoToken.SENAO,
