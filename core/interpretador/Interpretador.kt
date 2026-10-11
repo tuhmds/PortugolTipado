@@ -686,6 +686,32 @@ class Interpretador(
         }
 
         return when (chamada.nome) {
+            "copie", "junte" -> {
+                // Contrato partilhado com o C gerado: escrita sobre um texto
+                // variável, com o mesmo limite do armazenamento local.
+                if (chamada.argumentos.size != 2 ||
+                    chamada.argumentos[0] !is Identificador)
+                    throw ErroExecucao(
+                        "'${chamada.nome}' exige o nome de uma variável de texto",
+                        chamada.linha)
+                val destino = (chamada.argumentos[0] as Identificador).nome
+                val anterior = ambiente.obter(destino) as? Valor.Texto
+                    ?: throw ErroExecucao(
+                        "O destino de '${chamada.nome}' não é um texto",
+                        chamada.linha)
+                val origem = arg(1) as? Valor.Texto
+                    ?: throw ErroExecucao(
+                        "A origem de '${chamada.nome}' não é um texto",
+                        chamada.linha)
+                val novo = if (chamada.nome == "copie") origem.v
+                    else anterior.v + origem.v
+                // Cada texto local compilado tem 256 bytes incluindo NUL.
+                // O limite está em caracteres no interpretador, e nos
+                // casos ASCII coincide com os bytes usados pelo C.
+                val resultante = Valor.Texto(novo.take(255))
+                ambiente.atribuir(destino, resultante)
+                resultante
+            }
             "raiz" -> Valor.Decimal(sqrt(argD(0)))
             "raiz_cubica" -> Valor.Decimal(argD(0).pow(1.0 / 3.0))
             "potencia" -> Valor.Decimal(argD(0).pow(argD(1)))
