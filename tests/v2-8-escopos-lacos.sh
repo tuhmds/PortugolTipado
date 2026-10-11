@@ -198,7 +198,7 @@ rejeitar "sair_laco_com_recurso" "dispensar/ignorar em laco" '
 funcao inicio() {
     enquanto (verdadeiro) {
         ponteiro p = aloque(8)
-        dispensar
+        pare
         libere(p)
     }
 }'
@@ -207,7 +207,7 @@ rejeitar "ponteiro_cabecalho_para" "ponteiro no cabecalho do para" '
 funcao inicio() {
     para (ponteiro p = aloque(8); verdadeiro; ) {
         libere(p)
-        dispensar
+        pare
     }
 }'
 
