@@ -46,7 +46,18 @@ A bateria inicial contém cinco programas válidos compilados com GCC e executad
 - A análise de todos os caminhos de retorno é conservadora, mas não cobre todos os fluxos complexos.
 - Nem todas as combinações de arrays multidimensionais, estruturas aninhadas e aliases de memória foram verificadas.
 - Tamanhos de tipos C como long variam conforme a plataforma; a política de conversão adota limites conservadores.
-- **Não há ainda implementação do algoritmo experimental de reutilização de memória**, nem ganho de RAM comprovado.
 - Inferência automática com a palavra seja e outras mudanças de sintaxe ainda não fazem parte desta branch.
 
-Antes de abrir um Pull Request no projeto original, ampliar a matriz de testes (Windows, Linux e Android quando aplicável), reduzir duplicações entre verificadores e estabelecer as regras oficiais da linguagem.
+## Compatibilidade de textos e funcionamento do interpretador
+
+As regras de rejeição de `leia`, `copie` e `junte` destinadas a impedir escrita em textos sem espaço próprio aplicam-se apenas à opção `--tipagem=segura`.
+
+No modo normal, variáveis locais de texto, mesmo com valor inicial, recebem armazenamento próprio no C gerado, com limite de 256 bytes incluindo o fim do texto. Parâmetros de texto recebidos por valor são copiados para armazenamento local antes de serem alterados. O interpretador Kotlin também reconhece `copie` e `junte` para variáveis de texto; os exemplos de regressão comparam a saída do interpretador com a do C gerado.
+
+A escrita em destinos externos cuja dimensão real não pode ser determinada (por exemplo, campos ou apontadores) ainda não tem representação geral equivalente e segura no C. No modo normal a compilação é permitida, mas a execução interrompe-se com uma mensagem explícita nesses casos. **Este limite deve ser resolvido antes de afirmar compatibilidade total entre todas as operações do interpretador e do C gerado.** O limite fixo em bytes do C também pode fazer diferença em textos extensos ou com caracteres de vários bytes.
+
+Mensagens novas para utilizadores seguem o português europeu, preferindo explicar o que fazer em vez de usar termos técnicos como «buffer» ou «capacidade conhecida».
+
+## Revisão pelo mantenedor
+
+A contribuição permanece experimental e sujeita à avaliação do mantenedor. A compatibilidade e os limites aqui descritos são verificados por `tests/v2-2-compatibilidade-textos.sh` e pelos workflows de segurança e tipagem.
