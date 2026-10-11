@@ -100,7 +100,7 @@ funcao inicio() {
     retorne
 }'
 
-rejeitar "alias" "aliases" '
+rejeitar "alias" "uso apos transferencia" '
 funcao inicio() {
     ponteiro bloco = aloque(16)
     ponteiro copia = bloco
@@ -120,7 +120,7 @@ funcao inicio() {
     libere(bloco)
 }'
 
-rejeitar "libera_condicional" "libere em ramificacao" '
+rejeitar "libera_condicional" "estados de posse divergentes" '
 funcao inicio() {
     ponteiro bloco = aloque(16)
     se (verdadeiro) {
@@ -142,16 +142,24 @@ funcao inicio() {
     libere(bloco)
 }'
 
-rejeitar "ponteiro_argumento" "parametro ponteiro exige" '
+aceitar "ponteiro_argumento" "parametro" '
 funcao outra(ponteiro bloco): vazio {
     libere(bloco)
 }
-funcao inicio() {}'
+funcao inicio() {
+    ponteiro valor = aloque(16)
+    outra(valor)
+    escreva("parametro")
+}'
 
-rejeitar "ponteiro_retorno" "retornar ponteiro exige" '
+aceitar "ponteiro_retorno" "retorno" '
 funcao criar(): ponteiro {
     retorne aloque(16)
 }
-funcao inicio() {}'
+funcao inicio() {
+    ponteiro bloco = criar()
+    libere(bloco)
+    escreva("retorno")
+}'
 
 echo "V2.6: regressao de ownership concluida."
