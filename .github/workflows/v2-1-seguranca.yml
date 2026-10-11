@@ -11,6 +11,7 @@ on:
       - feature/v2-6-ownership-basico
       - feature/v2-7-fluxo-transferencia
       - feature/v2-8-escopos-lacos
+      - feature/v2-9-saidas-emprestimos
   pull_request:
   workflow_dispatch:
 
