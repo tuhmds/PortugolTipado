@@ -199,7 +199,7 @@ funcao terminar(): vazio {
 funcao inicio() {}
 PORT
 
-rejeitar "funcao_posterior_retorno_incompativel" "tipo" <<'PORT'
+rejeitar "funcao_posterior_retorno_incompativel" "conversao implicita insegura" <<'PORT'
 funcao primeiro(): inteiro {
     seja x = depois()
     retorne x
