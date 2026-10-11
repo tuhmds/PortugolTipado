@@ -64,13 +64,15 @@ funcao inicio() {
 }
 PORT
 
-executar "sombra_case_nao_vaza" "2.500000" "segura" <<'PORT'
+executar "sombra_case_nao_vaza" "primeiro22.500000" "segura" <<'PORT'
 funcao inicio() {
     escolha (1) {
         caso 1:
             seja valor = "primeiro"
+            escreva(valor)
         caso 2:
             seja valor = 2
+            escreva(valor)
     }
     seja valor = 2.5
     escreva(valor)
