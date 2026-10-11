@@ -898,13 +898,20 @@ class Transpilador(
         val ind = indentacao(nivel)
         val sb = StringBuilder()
         sb.append("$ind" + "switch (${transpilarExpressao(cmd.valor, parametrosAlterar)}) {\n")
+        // Cada caso e um escopo lexical proprio no Parser e nos validadores.
+        // Em C, labels case compartilham o escopo do switch se nao houver
+        // blocos explicitos; isso causava redefinicao de variaveis com
+        // nomes iguais em ramos diferentes (inclusive "seja").
+        // Os blocos preservam o fallthrough existente: nao adicionam break.
         for (caso in cmd.casos) {
-            sb.append("${indentacao(nivel + 1)}case ${transpilarExpressao(caso.valor, parametrosAlterar)}:\n")
+            sb.append("${indentacao(nivel + 1)}case ${transpilarExpressao(caso.valor, parametrosAlterar)}: {\n")
             sb.append(transpilarComandosComEscopoTexto(caso.corpo, nivel + 2, parametrosAlterar))
+            sb.append("${indentacao(nivel + 1)}}\n")
         }
         if (cmd.padrao != null) {
-            sb.append("${indentacao(nivel + 1)}default:\n")
+            sb.append("${indentacao(nivel + 1)}default: {\n")
             sb.append(transpilarComandosComEscopoTexto(cmd.padrao, nivel + 2, parametrosAlterar))
+            sb.append("${indentacao(nivel + 1)}}\n")
         }
         sb.append("$ind}\n")
         return sb.toString()
