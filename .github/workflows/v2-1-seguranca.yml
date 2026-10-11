@@ -8,6 +8,7 @@ on:
       - feature/v2-3-promocao-numerica-compartilhada
       - feature/v2-4-inferencia-sem-fallback
       - feature/v2-5-tipos-nativos-c
+      - feature/v2-6-ownership-basico
   pull_request:
   workflow_dispatch:
 
