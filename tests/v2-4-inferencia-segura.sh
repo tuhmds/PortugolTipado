@@ -95,17 +95,17 @@ funcao inicio() {
     escreva(acao())
 }'
 
-rejeitar "tamanho_aritmetica" "nao foi possivel inferir" '
+rejeitar "tamanho_subtracao_nao_validada" "tipagem segura" '
 inclua texto
 funcao inicio() {
-    escreva(tamanho("Ana") + 1)
+    escreva(tamanho("Ana") - 1)
 }'
 
 # Compatibilidade: o modo legado continua gerando C para o mesmo caso.
 cat > "$TMP/legado.port" <<'EOF'
 inclua texto
 funcao inicio() {
-    escreva(tamanho("Ana") + 1)
+    escreva(tamanho("Ana") - 1)
 }
 EOF
 java -jar "$PORT_JAR" --tipagem=legada -o "$TMP/legado.c" "$TMP/legado.port"
