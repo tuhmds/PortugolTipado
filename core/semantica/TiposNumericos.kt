@@ -2,6 +2,8 @@ package co.adilson889.typec.semantica
 
 import co.adilson889.typec.ast.Tipo
 import co.adilson889.typec.ast.TipoDado
+import co.adilson889.typec.ast.No
+import co.adilson889.typec.ast.Numero
 
 /**
  * Regras numericas compartilhadas pelo analisador semantico e pelo transpilador.
@@ -26,6 +28,11 @@ object TiposNumericos {
         !tipo.ehArray && !tipo.ehArray2D && tipo.nomeStruct == null
 
     fun ehInteiro(tipo: Tipo): Boolean = escalar(tipo) && tipo.base in inteiros
+
+    /** Literal de inteiro C positivo ou zero, seguramente representavel em int. */
+    fun ehLiteralInteiroNaoNegativo(n: No): Boolean =
+        n is Numero && n.tipo == TipoDado.INTEIRO &&
+            (n.valor.toIntOrNull()?.let { it >= 0 } == true)
 
     fun ehNumerico(tipo: Tipo): Boolean =
         escalar(tipo) && (tipo.base in inteiros || tipo.base in flutuantes)
