@@ -212,7 +212,7 @@ funcao inicio() {
 }
 PORT
 
-rejeitar "modulo_ausente" "nao encontrado" <<'PORT'
+rejeitar "modulo_ausente" "procurei" <<'PORT'
 inclua "nao_existe"
 funcao inicio() {
     seja dado = umaFuncao(2)
