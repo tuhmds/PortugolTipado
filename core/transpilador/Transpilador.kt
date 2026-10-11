@@ -794,10 +794,10 @@ class Transpilador(
             tiposVariaveis[cmd.nomeElemento] = cmd.tipoElemento
             nomesBufferTexto.remove(cmd.nomeElemento)
 
-            sb.append("$"+"ind" + "for (int $"+"indiceInterno = 0; $"+"indiceInterno < $"+"tamanho; $"+"indiceInterno++) {\n")
-            sb.append("$"+"{indentacao(nivel + 1)}$"+"{tipoParaC(cmd.tipoElemento)} $"+"{cmd.nomeElemento} = $"+"nomeArray[$"+"indiceInterno];\n")
+        sb.append("$ind" + "for (int $indiceInterno = 0; $indiceInterno < $tamanho; $indiceInterno++) {\n")
+        sb.append("${indentacao(nivel + 1)}${tipoParaC(cmd.tipoElemento)} ${cmd.nomeElemento} = $nomeArray[$indiceInterno];\n")
             sb.append(transpilarComandosComEscopoTexto(cmd.corpo, nivel + 1, parametrosAlterar))
-            sb.append("$"+"ind}\n")
+        sb.append("$ind}\n")
             return sb.toString()
         } finally {
             tiposVariaveis.clear()
