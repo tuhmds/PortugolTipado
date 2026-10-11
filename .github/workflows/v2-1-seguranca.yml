@@ -12,6 +12,7 @@ on:
       - feature/v2-7-fluxo-transferencia
       - feature/v2-8-escopos-lacos
       - feature/v2-9-saidas-emprestimos
+      - feature/v2-10-auditoria-estrutural
   pull_request:
   workflow_dispatch:
 
