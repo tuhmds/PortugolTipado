@@ -16,7 +16,8 @@ class ResultadoParse(val programa: Programa, val erros: List<ErroTypeC>)
 class Parser(
     private val tokens: List<Token>,
     private val fonte: String,
-    private val nomeArquivo: String = "main.port" // usado nas mensagens de erro (ver ErroTypeC) — importante em módulos, onde o arquivo com erro nem sempre é o principal
+    private val nomeArquivo: String = "main.port", // usado nas mensagens de erro
+    private val assinaturasExternas: Map<String, Tipo> = emptyMap()
 ) {
 
     private var posicao = 0
@@ -80,7 +81,10 @@ class Parser(
         erros.clear()
         escoposInferidos.clear()
         retornosDeclarados.clear()
+        retornosDeclarados.putAll(assinaturasExternas)
+        coletarRetornosPosteriores()
         escoposInferidos.add(mutableMapOf())
+        posicao = 0
         val programa = parsearPrograma()
         return ResultadoParse(programa, erros.toList())
     }
@@ -134,6 +138,82 @@ class Parser(
             if (posicao == inicio && !fimDosTokens() && !(emBloco && verifica(TipoToken.CHAVE_DIR))) avancar()
             null
         }
+    }
+
+    /**
+     * Primeira passagem: somente assinaturas de funcoes no nivel global.
+     * Ignora corpos e estruturas, preserva a posicao normal do parser e
+     * nao adivinha tipos: cabecalhos invalidos continuam sendo erros da
+     * analise sintatica completa.
+     */
+    private fun coletarRetornosPosteriores() {
+        val posicaoOriginal = posicao
+        try {
+            var indice = 0
+            var profundidade = 0
+            while (indice < tokens.size) {
+                val t = tokens[indice]
+                if (profundidade == 0 && t.tipo == TipoToken.FUNCAO &&
+                    tokens.getOrNull(indice + 1)?.tipo == TipoToken.IDENTIFICADOR &&
+                    tokens.getOrNull(indice + 2)?.tipo == TipoToken.PARENTESE_ESQ) {
+                    val nome = tokens[indice + 1].texto
+                    var cursor = indice + 2
+                    var parenteses = 0
+                    do {
+                        when (tokens.getOrNull(cursor)?.tipo) {
+                            TipoToken.PARENTESE_ESQ -> parenteses++
+                            TipoToken.PARENTESE_DIR -> parenteses--
+                            else -> Unit
+                        }
+                        cursor++
+                    } while (parenteses > 0 && cursor < tokens.size)
+                    if (parenteses == 0 && tokens.getOrNull(cursor)?.tipo == TipoToken.DOIS_PONTOS) {
+                        posicao = cursor + 1
+                        try {
+                            val retorno = parsearTipo()
+                            if (!retornosDeclarados.containsKey(nome) || nome !in assinaturasExternas)
+                                retornosDeclarados[nome] = retorno
+                        } catch (_: ErroTypeC) {
+                            // A segunda passagem gera a mensagem correta.
+                        }
+                    }
+                }
+                if (t.tipo == TipoToken.CHAVE_ESQ) profundidade++
+                if (t.tipo == TipoToken.CHAVE_DIR) profundidade = (profundidade - 1).coerceAtLeast(0)
+                indice++
+            }
+        } finally {
+            posicao = posicaoOriginal
+        }
+    }
+
+    /**
+     * Descobre includes no nivel global ANTES da inferencia, sem precisar
+     * aceitar provisoriamente declaracoes "seja" ainda nao resolvidas.
+     * Retorna apenas metadados; o arquivo completo sera validado depois.
+     */
+    fun coletarIncludesParaInferencia(): Programa {
+        val anterior = posicao
+        val includes = mutableListOf<Inclua>()
+        var profundidade = 0
+        try {
+            var indice = 0
+            while (indice < tokens.size) {
+                val token = tokens[indice]
+                if (profundidade == 0 && token.tipo == TipoToken.INCLUA) {
+                    posicao = indice
+                    includes.add(parsearInclua())
+                    indice = posicao
+                    continue
+                }
+                if (token.tipo == TipoToken.CHAVE_ESQ) profundidade++
+                if (token.tipo == TipoToken.CHAVE_DIR) profundidade = (profundidade - 1).coerceAtLeast(0)
+                indice++
+            }
+        } finally {
+            posicao = anterior
+        }
+        return Programa(includes, emptyList(), null, tokens.firstOrNull()?.linha ?: 1)
     }
 
     private fun parsearPrograma(): Programa {
