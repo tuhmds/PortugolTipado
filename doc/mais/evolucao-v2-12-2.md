@@ -10,6 +10,8 @@ Assim, quando o nome do elemento de uma iteração ocultava uma variável extern
 
 O código foi corrigido para salvar e restaurar **os tipos e os buffers de texto** com `try/finally`, inclusive quando o gerador encontra algum erro.
 
+Também foi corrigido o analisador de **ownership**: durante o `para cada`, um elemento de tipo não ponteiro deve ocultar o nome de um ponteiro externo homônimo, mas preservar a posse real desse ponteiro por identificador. O nome externo é restaurado ao terminar o laço. Antes da correção, uma leitura de um elemento `inteiro` podia ser confundida com uso indevido de um ponteiro possuído.
+
 ## Segundo risco: conflito com identificador sintetizado
 
 O `para cada` usava sempre um índice C chamado `_i`. O programador também podia nomear o elemento `_i`, fazendo o próprio inicializador C referenciar uma variável local com o mesmo nome em vez do índice, podendo usar um valor não inicializado.
@@ -18,7 +20,7 @@ A geração agora utiliza nomes incrementais `port_indice_cada_N`, verificando a
 
 ## Testes adicionados
 
-`tests/v2-12-2-para-cada.sh` cobre sombreamento de `duplo`, `texto` e `caractere`, parâmetros, laços aninhados, variáveis chamadas `_i`, nomes sintetizados usados pelo usuário, execução no modo legado e no modo seguro, uso de `seja` após `para cada` e rejeição de iteração sobre algo que não seja array.
+`tests/v2-12-2-para-cada.sh` cobre sombreamento de `duplo`, `texto`, `caractere` e ponteiros possuídos, parâmetros, laços aninhados, variáveis chamadas `_i`, nomes sintetizados usados pelo usuário, execução no modo legado e no modo seguro, uso de `seja` após `para cada` e rejeição de iteração sobre algo que não seja array.
 
 O script exige geração C e compilação com GCC `-std=c11 -Wall -Wextra -Werror -Werror=format`; todos os programas válidos são executados e suas saídas comparadas. O workflow `.github/workflows/v2-12-2-para-cada.yml` também roda as regressões V2.2–V2.12.1; a segurança de textos V2.1 continua coberta em separado.
 
