@@ -88,7 +88,43 @@ class Transpilador(
         "eh_letra" to Tipo(TipoDado.LOGICO), "eh_numero" to Tipo(TipoDado.LOGICO),
         "eh_maiuscula" to Tipo(TipoDado.LOGICO), "eh_minuscula" to Tipo(TipoDado.LOGICO),
         "maiusculo" to Tipo(TipoDado.CARACTERE), "minusculo" to Tipo(TipoDado.CARACTERE),
-        "leia_caractere" to Tipo(TipoDado.CARACTERE)
+        "leia_caractere" to Tipo(TipoDado.CARACTERE),
+        // Funcoes matematicas de C com retorno double.
+        "arcsen" to Tipo(TipoDado.DUPLO), "arcos" to Tipo(TipoDado.DUPLO),
+        "arctg" to Tipo(TipoDado.DUPLO), "arctg2" to Tipo(TipoDado.DUPLO),
+        "senh" to Tipo(TipoDado.DUPLO), "cosh" to Tipo(TipoDado.DUPLO),
+        "tgh" to Tipo(TipoDado.DUPLO), "exponencial" to Tipo(TipoDado.DUPLO),
+        "logaritmo" to Tipo(TipoDado.DUPLO),
+        "logaritmo10" to Tipo(TipoDado.DUPLO),
+        "logaritmo2" to Tipo(TipoDado.DUPLO),
+        "resto" to Tipo(TipoDado.DUPLO),
+        "hipotenusa" to Tipo(TipoDado.DUPLO),
+        "copiar_sinal" to Tipo(TipoDado.DUPLO),
+        "diferenca_tempo" to Tipo(TipoDado.DUPLO),
+        // Predicados de ctype/math e chamadas simples que devolvem int.
+        "eh_nan" to Tipo(TipoDado.INTEIRO),
+        "eh_infinito" to Tipo(TipoDado.INTEIRO),
+        "eh_finito" to Tipo(TipoDado.INTEIRO),
+        "eh_letra_ou_numero" to Tipo(TipoDado.INTEIRO),
+        "eh_espaco" to Tipo(TipoDado.INTEIRO),
+        "eh_pontuacao" to Tipo(TipoDado.INTEIRO),
+        "eh_controle" to Tipo(TipoDado.INTEIRO),
+        "eh_imprimivel" to Tipo(TipoDado.INTEIRO),
+        "eh_grafico" to Tipo(TipoDado.INTEIRO),
+        "eh_hexadecimal" to Tipo(TipoDado.INTEIRO),
+        "eh_branco" to Tipo(TipoDado.INTEIRO),
+        "escreva_caractere" to Tipo(TipoDado.INTEIRO),
+        "escreva_linha" to Tipo(TipoDado.INTEIRO),
+        "execute" to Tipo(TipoDado.INTEIRO),
+        // Funcoes que devolvem char* (ponteiro de texto).
+        "variavel_ambiente" to Tipo(TipoDado.TEXTO),
+        "data_texto" to Tipo(TipoDado.TEXTO),
+        // Funcoes que nao devolvem valor.
+        "semente" to Tipo(TipoDado.VAZIO),
+        "libere" to Tipo(TipoDado.VAZIO),
+        "sair" to Tipo(TipoDado.VAZIO),
+        "aborte" to Tipo(TipoDado.VAZIO),
+        "ordene" to Tipo(TipoDado.VAZIO)
     )
 
     // Nome de campo de struct -> tipo, por nome de struct (para futuro suporte completo)
