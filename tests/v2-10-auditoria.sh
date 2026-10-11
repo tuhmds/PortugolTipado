@@ -76,7 +76,7 @@ funcao inicio() {
     segunda(42)
 }'
 
-aceitar "ownership_empresta_apos_sombra" "ok" '
+aceitar "ownership_empresta_apos_sombra" "10ok" '
 funcao observar(const ponteiro p): vazio {
     escreva("ok")
 }
@@ -84,6 +84,7 @@ funcao inicio() {
     ponteiro recurso = aloque_zerado(1, 16)
     se (verdadeiro) {
         inteiro recurso = 10
+        escreva(recurso)
     }
     observar(recurso)
     libere(recurso)
