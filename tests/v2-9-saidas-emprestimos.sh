@@ -146,7 +146,7 @@ funcao inicio() {
     libere(recurso)
 }'
 
-aceitar "empresta_depois_move" "2" '
+aceitar "empresta_depois_move" "12" '
 funcao observar(const ponteiro p): vazio {
     escreva("1")
 }
