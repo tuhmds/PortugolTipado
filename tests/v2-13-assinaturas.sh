@@ -175,7 +175,7 @@ funcao calcular(): inteiro {
     seja n = comprimentoLocal("Ana")
     retorne n
 }
-funcao comprimentoLocal(texto texto): inteiro {
+funcao comprimentoLocal(texto valorTexto): inteiro {
     retorne 4
 }
 funcao inicio() {
