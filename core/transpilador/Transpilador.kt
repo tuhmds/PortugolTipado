@@ -740,34 +740,42 @@ class Transpilador(
     }
 
     private fun transpilarPara(cmd: ComandoPara, nivel: Int, parametrosAlterar: Set<String>): String {
-        val ind = indentacao(nivel)
-        val sb = StringBuilder()
+        val tiposAntesPara = tiposVariaveis.toMap()
+        val buffersAntesPara = nomesBufferTexto.toSet()
+        try {
+            val ind = indentacao(nivel)
+            val sb = StringBuilder()
 
-        val inicializacaoStr = when (val i = cmd.inicializacao) {
-            is DeclaracaoVariavel -> {
-                tiposVariaveis[i.nome] = i.tipo
-                "${tipoParaC(i.tipo)} ${i.nome} = ${transpilarExpressao(i.valorInicial!!, parametrosAlterar)}"
+            val inicializacaoStr = when (val i = cmd.inicializacao) {
+                is DeclaracaoVariavel -> {
+                    tiposVariaveis[i.nome] = i.tipo
+                    "${tipoParaC(i.tipo)} ${i.nome} = ${transpilarExpressao(i.valorInicial!!, parametrosAlterar)}"
+                }
+                is Atribuicao -> transpilarAtribuicao(i, parametrosAlterar)
+                null -> ""
+                else -> ""
             }
-            is Atribuicao -> transpilarAtribuicao(i, parametrosAlterar)
-            null -> ""
-            else -> ""
+
+            val condicaoStr = cmd.condicao?.let { transpilarExpressao(it, parametrosAlterar) } ?: ""
+
+            val incrementoStr = when (val inc = cmd.incremento) {
+                is IncrementoDecremento -> transpilarIncrementoDecremento(inc, parametrosAlterar)
+                is Atribuicao -> transpilarAtribuicao(inc, parametrosAlterar)
+                null -> ""
+                else -> ""
+            }
+
+            sb.append("$ind" + "for ($inicializacaoStr; $condicaoStr; $incrementoStr) {\n")
+            sb.append(transpilarComandosComEscopoTexto(cmd.corpo, nivel + 1, parametrosAlterar))
+            sb.append("$ind}\n")
+            return sb.toString()
+        } finally {
+            tiposVariaveis.clear()
+            tiposVariaveis.putAll(tiposAntesPara)
+            nomesBufferTexto.clear()
+            nomesBufferTexto.addAll(buffersAntesPara)
         }
-
-        val condicaoStr = cmd.condicao?.let { transpilarExpressao(it, parametrosAlterar) } ?: ""
-
-        val incrementoStr = when (val inc = cmd.incremento) {
-            is IncrementoDecremento -> transpilarIncrementoDecremento(inc, parametrosAlterar)
-            is Atribuicao -> transpilarAtribuicao(inc, parametrosAlterar)
-            null -> ""
-            else -> ""
-        }
-
-        sb.append("$ind" + "for ($inicializacaoStr; $condicaoStr; $incrementoStr) {\n")
-        sb.append(transpilarComandosComEscopoTexto(cmd.corpo, nivel + 1, parametrosAlterar))
-        sb.append("$ind}\n")
-        return sb.toString()
     }
-
     private fun transpilarParaCada(cmd: ComandoParaCada, nivel: Int, parametrosAlterar: Set<String>): String {
         val ind = indentacao(nivel)
         val sb = StringBuilder()
