@@ -778,23 +778,33 @@ class Transpilador(
         }
     }
     private fun transpilarParaCada(cmd: ComandoParaCada, nivel: Int, parametrosAlterar: Set<String>): String {
-        val ind = indentacao(nivel)
-        val sb = StringBuilder()
-        val indiceInterno = "_i"
-        val nomeArray = transpilarExpressao(cmd.array, parametrosAlterar)
-        val tamanho = inferirTamanhoArray(cmd.array)
-
-        tiposVariaveis[cmd.nomeElemento] = cmd.tipoElemento
+        // O elemento do foreach vive apenas dentro da iteracao. Sem guardar
+        // e restaurar tiposVariaveis, uma variavel externa homonima passava a
+        // ter o tipo do elemento no printf e na inferencia das expressoes
+        // seguintes. Restaurar tambem quando houver erro de transpilacao.
+        val tiposAntes = tiposVariaveis.toMap()
         val buffersAntes = nomesBufferTexto.toSet()
-        nomesBufferTexto.remove(cmd.nomeElemento)
+        try {
+            val ind = indentacao(nivel)
+            val sb = StringBuilder()
+            val indiceInterno = "_i"
+            val nomeArray = transpilarExpressao(cmd.array, parametrosAlterar)
+            val tamanho = inferirTamanhoArray(cmd.array)
 
-        sb.append("$ind" + "for (int $indiceInterno = 0; $indiceInterno < $tamanho; $indiceInterno++) {\n")
-        sb.append("${indentacao(nivel + 1)}${tipoParaC(cmd.tipoElemento)} ${cmd.nomeElemento} = $nomeArray[$indiceInterno];\n")
-        sb.append(transpilarComandosComEscopoTexto(cmd.corpo, nivel + 1, parametrosAlterar))
-        sb.append("$ind}\n")
-        nomesBufferTexto.clear()
-        nomesBufferTexto.addAll(buffersAntes)
-        return sb.toString()
+            tiposVariaveis[cmd.nomeElemento] = cmd.tipoElemento
+            nomesBufferTexto.remove(cmd.nomeElemento)
+
+            sb.append("$"+"ind" + "for (int $"+"indiceInterno = 0; $"+"indiceInterno < $"+"tamanho; $"+"indiceInterno++) {\n")
+            sb.append("$"+"{indentacao(nivel + 1)}$"+"{tipoParaC(cmd.tipoElemento)} $"+"{cmd.nomeElemento} = $"+"nomeArray[$"+"indiceInterno];\n")
+            sb.append(transpilarComandosComEscopoTexto(cmd.corpo, nivel + 1, parametrosAlterar))
+            sb.append("$"+"ind}\n")
+            return sb.toString()
+        } finally {
+            tiposVariaveis.clear()
+            tiposVariaveis.putAll(tiposAntes)
+            nomesBufferTexto.clear()
+            nomesBufferTexto.addAll(buffersAntes)
+        }
     }
 
     private fun inferirTamanhoArray(expressaoArray: No): String {
