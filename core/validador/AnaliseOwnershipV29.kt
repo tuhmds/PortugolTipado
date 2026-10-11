@@ -343,7 +343,19 @@ class AnaliseOwnershipV29(private val fonte: String) {
                     if (ponteiro(n.tipoElemento))
                         erro(n, "ponteiro em cada exige analise de lifetime")
                     condicaoSemTransferencia(n.array, t, true)
-                    loop(n, n.corpo, t, retornaPonteiro=retornaPonteiro)
+                    // O elemento local pode ocultar um ponteiro externo de
+                    // mesmo nome. O ponteiro conserva sua posse por ID, mas
+                    // deixa de ser visivel ate o fim do para cada.
+                    if (n.nomeElemento in t.emprestados)
+                        erro(n, "nao e permitido ocultar parametro ponteiro emprestado")
+                    val nomesAntesCada = LinkedHashMap(t.nomes)
+                    try {
+                        t.nomes.remove(n.nomeElemento)
+                        loop(n, n.corpo, t, retornaPonteiro=retornaPonteiro)
+                    } finally {
+                        t.nomes.clear()
+                        t.nomes.putAll(nomesAntesCada)
+                    }
                 }
                 is ComandoEscolher -> {
                     condicaoSemTransferencia(n.valor, t, true)
