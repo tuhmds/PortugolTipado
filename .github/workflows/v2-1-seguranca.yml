@@ -7,6 +7,7 @@ on:
       - feature/v2-2-analise-tipos
       - feature/v2-3-promocao-numerica-compartilhada
       - feature/v2-4-inferencia-sem-fallback
+      - feature/v2-5-tipos-nativos-c
   pull_request:
   workflow_dispatch:
 
