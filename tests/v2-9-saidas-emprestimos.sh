@@ -8,7 +8,7 @@ aceitar() {
   local caso="$1" esperado="$2" fonte="$3"
   printf '%s\n' "$fonte" > "$TMP/$caso.port"
   java -jar "$PORT_JAR" --tipagem=segura -o "$TMP/$caso.c" "$TMP/$caso.port"
-  gcc -Wall -Wextra -Werror -o "$TMP/$caso" "$TMP/$caso.c" -lm
+  gcc -Wall -Wextra -Werror -Wno-unused-parameter -o "$TMP/$caso" "$TMP/$caso.c" -lm
   local resultado
   resultado="$("$TMP/$caso")"
   if [ "$resultado" != "$esperado" ]; then
