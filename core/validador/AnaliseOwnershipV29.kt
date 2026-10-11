@@ -120,6 +120,21 @@ class AnaliseOwnershipV29(private val fonte: String) {
             c.argumentos.forEach { examinar(it, t, emLaco) }
             return
         }
+        // Nao permitir emprestar e transferir o mesmo dono na MESMA chamada.
+        // A ordem de avaliacao de argumentos em C nao garante qual uso vem antes.
+        val paraConsumir = mutableSetOf<String>()
+        val paraEmprestar = mutableSetOf<String>()
+        for ((i, arg) in c.argumentos.withIndex()) {
+            if (arg is Identificador && ponteiro(f.parametros[i].tipo)) {
+                if (emprestado(f.parametros[i])) paraEmprestar.add(arg.nome)
+                else paraConsumir.add(arg.nome)
+            }
+        }
+        val conflito = paraConsumir.intersect(paraEmprestar).firstOrNull()
+        if (conflito != null)
+            erro(c, "ponteiro '" + conflito +
+                "' nao pode ser emprestado e transferido na mesma chamada")
+
         for ((i, arg) in c.argumentos.withIndex()) {
             when {
                 emprestado(f.parametros[i]) -> emprestar(arg, t)
