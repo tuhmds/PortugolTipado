@@ -194,7 +194,7 @@ funcao rotina(): vazio {
 }
 funcao inicio() {}'
 
-rejeitar "sair_laco_com_recurso" "dispensar/ignorar em laco" '
+rejeitar "sair_laco_com_recurso" "pare/continue com ponteiro local ativo" '
 funcao inicio() {
     enquanto (verdadeiro) {
         ponteiro p = aloque(8)
