@@ -1,6 +1,7 @@
 package co.adilson889.typec.transpilador
 
 import co.adilson889.typec.ast.*
+import co.adilson889.typec.semantica.TiposNumericos
 import co.adilson889.typec.parser.Array2D
 import co.adilson889.typec.graficos.LibGraficos
 import co.adilson889.typec.interfaceui.LibInterface
@@ -367,10 +368,11 @@ class Transpilador(
         is Logico -> Tipo(TipoDado.LOGICO)
         is Identificador -> tiposVariaveis[expressao.nome] ?: Tipo(TipoDado.INTEIRO)
         is AcessoIndice -> {
-            // copy() preserva nomeStruct (ex: turma[i] continua sendo 'Aluno', então
-            // turma[i].nome acha o campo certo e ganha %s, não %d)
+            // Um caractere de texto[i] nao e outro texto (corrige o formato de printf).
             val tipoArray = inferirTipo(expressao.array)
-            if (tipoArray.ehArray2D) {
+            if (tipoArray.base == TipoDado.TEXTO && !tipoArray.ehArray && !tipoArray.ehArray2D) {
+                Tipo(TipoDado.CARACTERE)
+            } else if (tipoArray.ehArray2D) {
                 // matriz[i] ainda é um array (1D), com o tamanho da segunda dimensão
                 tipoArray.copy(ehArray2D = false, tamanhoFixo = tipoArray.tamanhoFixo2, tamanhoFixo2 = null)
             } else {
@@ -390,21 +392,20 @@ class Transpilador(
             ?: LibGraficos.funcoes[expressao.nome]?.let { Tipo(it.retorno) }
             ?: Tipo(TipoDado.INTEIRO)
         }
+        is OperacaoUnaria -> {
+            val operando = inferirTipo(expressao.operando)
+            TiposNumericos.resultadoUnario(expressao.operador, operando)
+                ?: operando
+        }
         is OperacaoBinaria -> {
             val comparadores = setOf("==", "!=", ">", "<", ">=", "<=", "&&", "||")
             if (expressao.operador in comparadores) {
                 Tipo(TipoDado.LOGICO)
             } else {
-                val tipoEsquerda = inferirTipo(expressao.esquerda)
-                val tipoDireita = inferirTipo(expressao.direita)
-                val ordemPromocao = listOf(
-                    TipoDado.DUPLO_LONGO, TipoDado.DUPLO, TipoDado.REAL,
-                    TipoDado.INTEIRO_GIGANTE, TipoDado.INTEIRO_LONGO,
-                    TipoDado.INTEIRO, TipoDado.INTEIRO_POSITIVO, TipoDado.INTEIRO_CURTO
-                )
-                val posEsquerda = ordemPromocao.indexOf(tipoEsquerda.base).let { if (it == -1) ordemPromocao.size else it }
-                val posDireita = ordemPromocao.indexOf(tipoDireita.base).let { if (it == -1) ordemPromocao.size else it }
-                if (posEsquerda <= posDireita) tipoEsquerda else tipoDireita
+                val esquerda = inferirTipo(expressao.esquerda)
+                val direita = inferirTipo(expressao.direita)
+                TiposNumericos.resultadoAritmetico(esquerda, direita)
+                    ?: Tipo(TipoDado.INTEIRO) // modo legado: casos invalidos ainda sao verificados pelo GCC
             }
         }
         else -> Tipo(TipoDado.INTEIRO)
