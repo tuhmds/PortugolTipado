@@ -199,6 +199,14 @@ class AnaliseOwnershipV29(private val fonte: String) {
     private fun declarar(d: DeclaracaoVariavel, t: Trilha, emLaco: Boolean) {
         if (d.nome in t.emprestados)
             erro(d, "nao e permitido ocultar parametro ponteiro emprestado")
+        // O mapa de ownership segue ponteiros por nome visivel. Uma variavel
+        // nao ponteiro com o mesmo nome esconderia o dono verdadeiro e poderia
+        // fazer libere(nome) atuar sobre um inteiro em vez do recurso alocado.
+        // Conservadoramente rejeitamos esse sombreamento ate haver uma tabela
+        // simbolica unica para todos os tipos no analisador de ownership.
+        if (!ponteiro(d.tipo) && d.nome in t.nomes)
+            erro(d, "variavel nao ponteiro nao pode ocultar ponteiro possuido '" +
+                d.nome + "' no modo seguro")
         if (ponteiro(d.tipo)) {
             val origem = d.valorInicial ?: erro(d, "ponteiro deve ser inicializado " +
                 "com alocacao ou transferencia de posse")
