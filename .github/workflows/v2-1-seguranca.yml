@@ -9,6 +9,7 @@ on:
       - feature/v2-4-inferencia-sem-fallback
       - feature/v2-5-tipos-nativos-c
       - feature/v2-6-ownership-basico
+      - feature/v2-7-fluxo-transferencia
   pull_request:
   workflow_dispatch:
 
