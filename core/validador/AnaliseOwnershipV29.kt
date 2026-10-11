@@ -199,14 +199,10 @@ class AnaliseOwnershipV29(private val fonte: String) {
     private fun declarar(d: DeclaracaoVariavel, t: Trilha, emLaco: Boolean) {
         if (d.nome in t.emprestados)
             erro(d, "nao e permitido ocultar parametro ponteiro emprestado")
-        // O mapa de ownership segue ponteiros por nome visivel. Uma variavel
-        // nao ponteiro com o mesmo nome esconderia o dono verdadeiro e poderia
-        // fazer libere(nome) atuar sobre um inteiro em vez do recurso alocado.
-        // Conservadoramente rejeitamos esse sombreamento ate haver uma tabela
-        // simbolica unica para todos os tipos no analisador de ownership.
-        if (!ponteiro(d.tipo) && d.nome in t.nomes)
-            erro(d, "variavel nao ponteiro nao pode ocultar ponteiro possuido '" +
-                d.nome + "' no modo seguro")
+        // Variaveis de outros tipos tambem podem ocultar um ponteiro externo.
+        // Durante o escopo interno, o nome deixa de apontar para aquele dono,
+        // mas o recurso continua registrado e volta a ficar visivel na saida.
+        if (!ponteiro(d.tipo)) t.nomes.remove(d.nome)
         if (ponteiro(d.tipo)) {
             val origem = d.valorInicial ?: erro(d, "ponteiro deve ser inicializado " +
                 "com alocacao ou transferencia de posse")
@@ -320,21 +316,28 @@ class AnaliseOwnershipV29(private val fonte: String) {
                 is ComandoEnquanto -> loop(n, n.corpo, t, listOf(n.condicao), retornaPonteiro)
                 is ComandoFacaEnquanto -> loop(n, n.corpo, t, listOf(n.condicao), retornaPonteiro)
                 is ComandoPara -> {
-                    if (n.inicializacao is DeclaracaoVariavel &&
-                        ponteiro(n.inicializacao.tipo))
-                        erro(n, "ponteiro no cabecalho do para ainda sem escopo de ownership")
-                    n.inicializacao?.let { bloco(listOf(it), t, true, false, retornaPonteiro) }
-                    // Em C, 'continue' num para executa o incremento. Exigir
-                    // que ele nao tenha efeito sobre o ownership.
-                    n.incremento?.let {
-                        val incremento = t.copia()
-                        bloco(listOf(it), incremento, true, false, retornaPonteiro)
-                        if (incremento.recursos != t.recursos)
-                            erro(it, "incremento do para nao pode transferir ownership")
+                    // A variavel declarada no cabecalho so existe ate o fim do
+                    // para. Nao pode esconder permanentemente dono de fora.
+                    val nomesAntesPara = LinkedHashMap(t.nomes)
+                    try {
+                        if (n.inicializacao is DeclaracaoVariavel &&
+                            ponteiro(n.inicializacao.tipo))
+                            erro(n, "ponteiro no cabecalho do para ainda sem escopo de ownership")
+                        n.inicializacao?.let { bloco(listOf(it), t, true, false, retornaPonteiro) }
+                        // Em C, 'continue' num para executa o incremento.
+                        n.incremento?.let {
+                            val incremento = t.copia()
+                            bloco(listOf(it), incremento, true, false, retornaPonteiro)
+                            if (incremento.recursos != t.recursos)
+                                erro(it, "incremento do para nao pode transferir ownership")
+                        }
+                        val extras = listOfNotNull(n.condicao)
+                        val cmds = n.corpo + listOfNotNull(n.incremento)
+                        loop(n, cmds, t, extras, retornaPonteiro)
+                    } finally {
+                        t.nomes.clear()
+                        t.nomes.putAll(nomesAntesPara)
                     }
-                    val extras = listOfNotNull(n.condicao)
-                    val cmds = n.corpo + listOfNotNull(n.incremento)
-                    loop(n, cmds, t, extras, retornaPonteiro)
                 }
                 is ComandoParaCada -> {
                     if (ponteiro(n.tipoElemento))
