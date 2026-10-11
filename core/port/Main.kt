@@ -97,9 +97,18 @@ fun main(args: Array<String>) {
 
     val c = try {
         val tokens = tokenizarFonte(fonte)
-        val programa = Parser(tokens, fonte).parsear()
         val pacotes = (pastaPacotes ?: System.getenv("PORT_PACOTES"))?.let { File(it) }
             ?: File(File(entrada).absoluteFile.parentFile, "pacotes")
+        // V2.13: os includes sao resolvidos antes de analisar as expressoes
+        // "seja" do principal. Nao aceitamos temporariamente programas
+        // sintaticamente incompletos nem inferimos um tipo por fallback.
+        val includes = Parser(tokens, fonte).coletarIncludesParaInferencia()
+        val modulosPrevios = Resolvedor(pacotes)
+            .resolver(includes, fonte, File(entrada)).modulos
+        val assinaturas = modulosPrevios.flatMap { it.declaracoesGlobais }
+            .filterIsInstance<co.adilson889.typec.ast.DeclaracaoFuncao>()
+            .associate { it.nome to it.tipoRetorno }
+        val programa = Parser(tokens, fonte, assinaturasExternas = assinaturas).parsear()
         val resolucao = Resolvedor(pacotes).resolver(programa, fonte, File(entrada))
         Validador(fonte).validar(resolucao.programa, resolucao.modulos)
         if (tipagemSeguraV2) {
