@@ -535,30 +535,35 @@ class Parser(
         val linha = atual().linha
         consumir(TipoToken.PARA, "esperado 'para'")
 
-        if (verifica(TipoToken.CADA)) {
-            return parsearParaCadaResto(linha)
-        }
-
-        consumir(TipoToken.PARENTESE_ESQ, "esperado '(' após 'para'")
-
-        val inicializacao: No? = if (!verifica(TipoToken.PONTO_E_VIRGULA)) {
-            if (verifica(TipoToken.CONST)) {
-                throw ErroSintatico("'const' não pode ser usado na inicialização do 'para' (a variável de controle muda a cada volta)", atual().linha, fonte, nomeArquivo)
+        // Variaveis declaradas no cabecalho so sao visiveis no proprio para.
+        return comEscopoInferido {
+            if (verifica(TipoToken.CADA)) {
+                parsearParaCadaResto(linha)
+            } else {
+                consumir(TipoToken.PARENTESE_ESQ, "esperado '(' apos 'para'")
+                val inicializacao: No? = if (!verifica(TipoToken.PONTO_E_VIRGULA)) {
+                    if (verifica(TipoToken.CONST)) {
+                        throw ErroSintatico(
+                            "'const' nao pode ser usado no controle de 'para'",
+                            atual().linha, fonte, nomeArquivo)
+                    }
+                    when {
+                        verifica(TipoToken.SEJA) -> parsearSeja()
+                        ehTokenDeTipo(atual().tipo) -> parsearDeclaracaoVariavel()
+                        else -> parsearAtribuicaoOuExpressaoComando()
+                    }
+                } else null
+                consumir(TipoToken.PONTO_E_VIRGULA, "esperado ';' apos inicializacao do 'para'")
+                val condicao = if (!verifica(TipoToken.PONTO_E_VIRGULA))
+                    parsearExpressao() else null
+                consumir(TipoToken.PONTO_E_VIRGULA, "esperado ';' apos condicao do 'para'")
+                val incremento = if (!verifica(TipoToken.PARENTESE_DIR))
+                    parsearAtribuicaoOuExpressaoComando() else null
+                consumir(TipoToken.PARENTESE_DIR, "esperado ')' no cabecalho do 'para'")
+                val corpo = parsearBloco()
+                ComandoPara(inicializacao, condicao, incremento, corpo, linha)
             }
-            if (ehTokenDeTipo(atual().tipo)) parsearDeclaracaoVariavel()
-            else parsearAtribuicaoOuExpressaoComando()
-        } else null
-        consumir(TipoToken.PONTO_E_VIRGULA, "esperado ';' após inicialização do 'para'")
-
-        val condicao: No? = if (!verifica(TipoToken.PONTO_E_VIRGULA)) parsearExpressao() else null
-        consumir(TipoToken.PONTO_E_VIRGULA, "esperado ';' após condição do 'para'")
-
-        val incremento: No? = if (!verifica(TipoToken.PARENTESE_DIR)) parsearAtribuicaoOuExpressaoComando() else null
-
-        consumir(TipoToken.PARENTESE_DIR, "esperado ')' para fechar cabeçalho do 'para'")
-        val corpo = parsearBloco()
-
-        return ComandoPara(inicializacao, condicao, incremento, corpo, linha)
+        }
     }
 
     private fun parsearParaCadaResto(linha: Int): ComandoParaCada {
@@ -569,7 +574,7 @@ class Parser(
         consumir(TipoToken.EM, "esperado 'em' em 'para cada (tipo nome em array)'")
         val array = parsearExpressao()
         consumir(TipoToken.PARENTESE_DIR, "esperado ')' para fechar 'para cada'")
-        val corpo = parsearBloco()
+        val corpo = comEscopoInferido(mapOf(nome.texto to tipo)) { parsearBloco() }
         return ComandoParaCada(tipo, nome.texto, array, corpo, linha)
     }
 
