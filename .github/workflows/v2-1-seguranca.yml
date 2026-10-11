@@ -13,6 +13,7 @@ on:
       - feature/v2-8-escopos-lacos
       - feature/v2-9-saidas-emprestimos
       - feature/v2-10-auditoria-estrutural
+      - feature/v2-11-matriz-sanitizadores
   pull_request:
   workflow_dispatch:
 
