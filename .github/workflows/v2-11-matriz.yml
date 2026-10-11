@@ -1,0 +1,103 @@
+name: V2.11 - robustez multiplataforma e sanitizadores
+
+on:
+  push:
+    branches:
+      - feature/v2-11-matriz-sanitizadores
+  workflow_dispatch:
+
+concurrency:
+  group: auditoria-v2-11
+  cancel-in-progress: true
+
+jobs:
+  regressao-acumulada:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar Kotlin
+        working-directory: core
+        run: gradle fatJar --no-daemon
+      - name: Tipagem V2.2
+        run: bash tests/v2-2-tipos.sh
+      - name: Numericos V2.3
+        run: bash tests/v2-3-inferencia.sh
+      - name: Inferencia V2.4
+        run: bash tests/v2-4-inferencia-segura.sh
+      - name: Tipos nativos V2.5
+        run: bash tests/v2-5-tipos-nativos.sh
+      - name: Ownership V2.6
+        run: bash tests/v2-6-ownership.sh
+      - name: Fluxo V2.7
+        run: bash tests/v2-7-fluxo.sh
+      - name: Escopos V2.8
+        run: bash tests/v2-8-escopos-lacos.sh
+      - name: Borrowing V2.9
+        run: bash tests/v2-9-saidas-emprestimos.sh
+      - name: Auditoria V2.10
+        run: bash tests/v2-10-auditoria.sh
+      - name: Adversarial V2.11
+        run: bash tests/v2-11-adversarial.sh
+
+  matriz-nativa:
+    name: "${{ matrix.label }}"
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: linux-gcc
+            os: ubuntu-latest
+            compiler: gcc
+            flags: ""
+          - label: linux-clang-asan-ubsan
+            os: ubuntu-latest
+            compiler: clang
+            flags: "-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer"
+          - label: macos-clang
+            os: macos-latest
+            compiler: clang
+            flags: ""
+          - label: windows-mingw-gcc
+            os: windows-latest
+            compiler: gcc
+            flags: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar Kotlin
+        working-directory: core
+        run: gradle fatJar --no-daemon
+      - uses: msys2/setup-msys2@v2
+        if: runner.os == 'Windows'
+        with:
+          msystem: MINGW64
+          path-type: inherit
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+      - name: Executar matriz nativa POSIX
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PORT_CC: "${{ matrix.compiler }}"
+          PORT_CCFLAGS: "${{ matrix.flags }}"
+          ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1"
+          UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
+        run: bash tests/v2-11-adversarial.sh
+      - name: Executar matriz no Windows MinGW
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        env:
+          PORT_CC: gcc
+          PORT_CCFLAGS: ""
+        run: bash tests/v2-11-adversarial.sh
