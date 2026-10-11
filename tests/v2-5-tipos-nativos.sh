@@ -88,7 +88,7 @@ funcao inicio() {
     escreva(aloque(16))
 }'
 
-rejeitar "ponteiro_soma" "tipagem segura" '
+rejeitar "ponteiro_soma" "ownership" '
 funcao inicio() {
     escreva(aloque(16) + 1)
 }'
