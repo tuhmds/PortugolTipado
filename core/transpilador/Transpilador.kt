@@ -53,7 +53,9 @@ class Transpilador(
     *   Ex: "base_core" -> guarda BASE_CORE_H. Default seguro para uso avulso (sem módulos). */
     private val nomeArquivo: String = "programa",
     /** Decide como o texto é guardado em C (arrays fixos) e gera os blocos de leitura inline. */
-    private val memoria: MemoryManager = MemoryManager()
+    private val memoria: MemoryManager = MemoryManager(),
+    /** No modo seguro, nao supor que uma expressao desconhecida e inteira. */
+    private val tipagemSegura: Boolean = false
 ) {
 
     // Nome da variável -> Tipo (escopo simples, achatado; suficiente para
@@ -356,6 +358,22 @@ class Transpilador(
         TipoDado.DUPLO_LONGO -> "%Lf"
         TipoDado.TEMPO -> "%ld"
         TipoDado.VAZIO -> ""
+    }
+
+    /** Mantem o fallback somente no modo legado. */
+    private fun tipoIndeterminado(expr: No, contexto: String): Tipo {
+        if (tipagemSegura)
+            throw ErroTranspilacao("linha ${expr.linha}: nao foi possivel inferir o tipo de " +
+                contexto + "; declare uma assinatura explicita ou corrija a expressao")
+        return Tipo(TipoDado.INTEIRO)
+    }
+
+    private fun exigirTipoImprimivel(tipo: Tipo, expr: No) {
+        if (!tipagemSegura) return
+        if (tipo.ehArray || tipo.ehArray2D || tipo.nomeStruct != null ||
+            tipo.base == TipoDado.VAZIO)
+            throw ErroTranspilacao("linha ${expr.linha}: escreva nao aceita array, " +
+                "estrutura ou funcao sem retorno diretamente")
     }
 
     private fun inferirTipo(expressao: No): Tipo = when (expressao) {
