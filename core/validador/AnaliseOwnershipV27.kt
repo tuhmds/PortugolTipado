@@ -76,8 +76,9 @@ class AnaliseOwnershipV27(private val fonte: String) {
                 f.parametros.any { ponteiro(it.tipo) }))
             erro(c, "funcao externa com ponteiro exige contrato de ownership")
         if (c.argumentos.size != f.parametros.size) {
-            // A checagem de aridade completa tambem pertence a tipagem.
-            erro(c, "quantidade de argumentos invalida em '" + c.nome + "'")
+            // A checagem de aridade pertence ao verificador de tipos posterior.
+            c.argumentos.forEach { examinar(it, t, emLaco) }
+            return
         }
         for ((i, arg) in c.argumentos.withIndex()) {
             if (ponteiro(f.parametros[i].tipo)) consumir(arg, t, emLaco, false)
