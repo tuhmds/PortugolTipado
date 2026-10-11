@@ -115,6 +115,8 @@ class AnaliseOwnershipV26(private val fonte: String) {
             if (recursos.containsKey(d.nome))
                 erro(d, "nome de ponteiro ja usado no bloco: '" + d.nome + "'")
             val origem = d.valorInicial
+            if (origem is ChamadaFuncao && origem.nome == "realoque")
+                erro(d, "realoque ainda nao possui regras seguras de ownership")
             if (origem !is ChamadaFuncao || origem.nome !in alocadores)
                 erro(d, "ponteiro local deve ser inicializado com aloque " +
                     "ou aloque_zerado; aliases e ponteiros sem dono nao sao aceitos")
