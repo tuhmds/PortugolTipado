@@ -52,10 +52,28 @@ object TiposNumericos {
      * implicita de inteiros assinados com inteiros positivos.
      * A verificacao de divisao por zero e outras regras nao pertence aqui.
      */
-    fun resultadoAritmetico(esquerda: Tipo, direita: Tipo): Tipo? {
-        if (!ehNumerico(esquerda) || !ehNumerico(direita)) return null
+    fun resultadoAritmetico(
+        esquerda: Tipo, direita: Tipo, operador: String = "+",
+        literalEsquerdoSeguro: Boolean = false, literalDireitoSeguro: Boolean = false
+    ): Tipo? {
+        if (!escalar(esquerda) || !escalar(direita)) return null
         val a = esquerda.base
         val b = direita.base
+
+        // size_t e unsigned, com largura dependente da plataforma. Somente
+        // a adicao de dois tamanhos ou de tamanho com literal int >= 0 e aceita.
+        if (a == TipoDado.TAMANHO || b == TipoDado.TAMANHO) {
+            if (operador != "+") return null
+            val doisTamanhos = a == TipoDado.TAMANHO && b == TipoDado.TAMANHO
+            val tamanhoLiteral = a == TipoDado.TAMANHO &&
+                b == TipoDado.INTEIRO && literalDireitoSeguro
+            val literalTamanho = b == TipoDado.TAMANHO &&
+                a == TipoDado.INTEIRO && literalEsquerdoSeguro
+            return if (doisTamanhos || tamanhoLiteral || literalTamanho)
+                Tipo(TipoDado.TAMANHO) else null
+        }
+
+        if (!ehNumerico(esquerda) || !ehNumerico(direita)) return null
 
         if (a in flutuantes || b in flutuantes) {
             val t = listOf(a, b).filter { it in flutuantes }
