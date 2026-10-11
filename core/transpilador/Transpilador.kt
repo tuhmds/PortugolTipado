@@ -384,7 +384,9 @@ class Transpilador(
         is Texto -> Tipo(TipoDado.TEXTO)
         is Caractere -> Tipo(TipoDado.CARACTERE)
         is Logico -> Tipo(TipoDado.LOGICO)
-        is Identificador -> tiposVariaveis[expressao.nome] ?: Tipo(TipoDado.INTEIRO)
+        is Identificador -> tiposVariaveis[expressao.nome]
+            ?: if (expressao.nome in constantesTraduzidas) Tipo(TipoDado.DUPLO)
+            else tipoIndeterminado(expressao, "variavel '" + expressao.nome + "'")
         is AcessoIndice -> {
             // Um caractere de texto[i] nao e outro texto (corrige o formato de printf).
             val tipoArray = inferirTipo(expressao.array)
@@ -393,8 +395,10 @@ class Transpilador(
             } else if (tipoArray.ehArray2D) {
                 // matriz[i] ainda é um array (1D), com o tamanho da segunda dimensão
                 tipoArray.copy(ehArray2D = false, tamanhoFixo = tipoArray.tamanhoFixo2, tamanhoFixo2 = null)
-            } else {
+            } else if (tipoArray.ehArray) {
                 tipoArray.copy(ehArray = false, tamanhoFixo = null)
+            } else {
+                tipoIndeterminado(expressao, "acesso por indice")
             }
         }
         is AcessoCampo -> {
@@ -402,18 +406,18 @@ class Transpilador(
             val nomeStruct = tipoObjeto.nomeStruct
             val structDecl = nomeStruct?.let { structs[it] }
             val campo = structDecl?.campos?.find { it.nome == expressao.campo }
-            campo?.tipo ?: Tipo(TipoDado.INTEIRO)
+            campo?.tipo ?: tipoIndeterminado(expressao, "campo '" + expressao.campo + "'")
         }
         is ChamadaFuncao -> {
             retornosFuncoes[expressao.nome]
             ?: retornosFuncoesBiblioteca[expressao.nome]
             ?: LibGraficos.funcoes[expressao.nome]?.let { Tipo(it.retorno) }
-            ?: Tipo(TipoDado.INTEIRO)
+            ?: tipoIndeterminado(expressao, "retorno da funcao '" + expressao.nome + "'")
         }
         is OperacaoUnaria -> {
             val operando = inferirTipo(expressao.operando)
             TiposNumericos.resultadoUnario(expressao.operador, operando)
-                ?: operando
+                ?: tipoIndeterminado(expressao, "operacao unaria")
         }
         is OperacaoBinaria -> {
             val comparadores = setOf("==", "!=", ">", "<", ">=", "<=", "&&", "||")
@@ -423,10 +427,10 @@ class Transpilador(
                 val esquerda = inferirTipo(expressao.esquerda)
                 val direita = inferirTipo(expressao.direita)
                 TiposNumericos.resultadoAritmetico(esquerda, direita)
-                    ?: Tipo(TipoDado.INTEIRO) // modo legado: casos invalidos ainda sao verificados pelo GCC
+                    ?: tipoIndeterminado(expressao, "operacao aritmetica")
             }
         }
-        else -> Tipo(TipoDado.INTEIRO)
+        else -> tipoIndeterminado(expressao, "expressao sem regra de tipagem")
     }
 
     // -------------------------------------------------------------
@@ -591,6 +595,7 @@ class Transpilador(
                 valoresParaImprimir.add(transpilarExpressao(arg, emptySet()))
             } else {
                 val tipo = inferirTipo(arg)
+                exigirTipoImprimivel(tipo, arg)
                 formatoSb.append(especificadorFormato(tipo))
                 valoresParaImprimir.add(transpilarExpressao(arg, emptySet()))
             }
