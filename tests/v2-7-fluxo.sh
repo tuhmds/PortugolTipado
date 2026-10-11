@@ -209,7 +209,7 @@ funcao inicio() {
     libere(b)
 }'
 
-rejeitar "liberacao_em_loop" "libere em laco" '
+rejeitar "liberacao_em_loop" "laco nao pode alterar ownership" '
 funcao inicio() {
     ponteiro a = aloque(16)
     enquanto (verdadeiro) {
