@@ -154,7 +154,7 @@ funcao inicio() {
 }
 ```
 
-Código mais solto, típico do ambiente educacional, passa a gerar erros de propósito — no mesmo espírito de abrir JavaScript em um projeto TypeScript. A tipagem forte e as regras mais rígidas são deliberadas: o objetivo é ir além do uso puramente educacional.
+O modo padrão mantém a sintaxe e os usos habituais. As verificações adicionais de tipos e as restrições mais exigentes de escrita em textos são opcionais e podem ser activadas com `--tipagem=segura`. No C gerado, os textos locais modificáveis usam espaço próprio; quando não é possível determinar se um destino externo pode ser alterado com segurança, a execução é interrompida em vez de arriscar uma escrita inválida.
 
 ---
 
