@@ -14,6 +14,7 @@ on:
       - feature/v2-9-saidas-emprestimos
       - feature/v2-10-auditoria-estrutural
       - feature/v2-11-matriz-sanitizadores
+      - feature/v2-12-seja-inferencia-local
   pull_request:
   workflow_dispatch:
 
