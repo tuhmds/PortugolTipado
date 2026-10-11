@@ -335,7 +335,7 @@ class AnaliseOwnershipV28(private val fonte: String) {
                         val t = Trilha()
                         d.parametros.forEach {
                             if (ponteiro(it.tipo)) {
-                                if (it.nome in t.recursos)
+                                if (it.nome in t.nomes)
                                     erro(it, "parametro ponteiro duplicado")
                                 t.declarar(it.nome)
                             }
