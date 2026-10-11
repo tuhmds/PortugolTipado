@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ownership-v2-8
+  group: ownership-v2-8-validated
   cancel-in-progress: true
 
 jobs:
