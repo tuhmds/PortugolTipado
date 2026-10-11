@@ -150,6 +150,18 @@ funcao inicio() {
 }
 PORT
 
+executar "ponteiro_externo_sombreado_por_inteiro" "12ok" "segura" <<'PORT'
+funcao inicio() {
+    ponteiro item = aloque(16)
+    inteiro dados[2] = {1, 2}
+    para cada (inteiro item em dados) {
+        escreva(item)
+    }
+    libere(item)
+    escreva("ok")
+}
+PORT
+
 rejeitar "cada_nao_array" "exige array" <<'PORT'
 funcao inicio() {
     inteiro dado = 1
