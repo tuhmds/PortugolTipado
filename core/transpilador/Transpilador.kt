@@ -2,6 +2,7 @@ package co.adilson889.typec.transpilador
 
 import co.adilson889.typec.ast.*
 import co.adilson889.typec.semantica.TiposNumericos
+import co.adilson889.typec.semantica.TiposNativosC
 import co.adilson889.typec.parser.Array2D
 import co.adilson889.typec.graficos.LibGraficos
 import co.adilson889.typec.interfaceui.LibInterface
@@ -377,6 +378,8 @@ class Transpilador(
             TipoDado.INTEIRO_GIGANTE -> "long long"
             TipoDado.DUPLO_LONGO -> "long double"
             TipoDado.TEMPO -> "time_t"
+            TipoDado.TAMANHO -> "size_t"
+            TipoDado.PONTEIRO_OPACO -> "void*"
         }
         return base
     }
@@ -393,6 +396,8 @@ class Transpilador(
         TipoDado.INTEIRO_GIGANTE -> "%lld"
         TipoDado.DUPLO_LONGO -> "%Lf"
         TipoDado.TEMPO -> "%ld"
+        TipoDado.TAMANHO -> "%zu"
+        TipoDado.PONTEIRO_OPACO -> "%p"
         TipoDado.VAZIO -> ""
     }
 
@@ -407,9 +412,9 @@ class Transpilador(
     private fun exigirTipoImprimivel(tipo: Tipo, expr: No) {
         if (!tipagemSegura) return
         if (tipo.ehArray || tipo.ehArray2D || tipo.nomeStruct != null ||
-            tipo.base == TipoDado.VAZIO)
+            tipo.base == TipoDado.VAZIO || tipo.base == TipoDado.PONTEIRO_OPACO)
             throw ErroTranspilacao("linha ${expr.linha}: escreva nao aceita array, " +
-                "estrutura ou funcao sem retorno diretamente")
+                "estrutura, funcao sem retorno ou ponteiro nativo diretamente")
     }
 
     private fun inferirTipo(expressao: No): Tipo = when (expressao) {
@@ -446,6 +451,7 @@ class Transpilador(
         }
         is ChamadaFuncao -> {
             retornosFuncoes[expressao.nome]
+            ?: TiposNativosC.retorno(expressao.nome)
             ?: retornosFuncoesBiblioteca[expressao.nome]
             ?: LibGraficos.funcoes[expressao.nome]?.let { Tipo(it.retorno) }
             ?: tipoIndeterminado(expressao, "retorno da funcao '" + expressao.nome + "'")
@@ -462,8 +468,11 @@ class Transpilador(
             } else {
                 val esquerda = inferirTipo(expressao.esquerda)
                 val direita = inferirTipo(expressao.direita)
-                TiposNumericos.resultadoAritmetico(esquerda, direita)
-                    ?: tipoIndeterminado(expressao, "operacao aritmetica")
+                TiposNumericos.resultadoAritmetico(
+                    esquerda, direita, expressao.operador,
+                    TiposNumericos.ehLiteralInteiroNaoNegativo(expressao.esquerda),
+                    TiposNumericos.ehLiteralInteiroNaoNegativo(expressao.direita)
+                ) ?: tipoIndeterminado(expressao, "operacao aritmetica")
             }
         }
         else -> tipoIndeterminado(expressao, "expressao sem regra de tipagem")
@@ -626,9 +635,6 @@ class Transpilador(
         for (arg in cmd.argumentos) {
             if (arg is Texto) {
                 formatoSb.append(arg.valor.replace("%", "%%"))
-            } else if (arg is ChamadaFuncao && arg.nome == "tamanho") {
-                formatoSb.append("%zu")
-                valoresParaImprimir.add(transpilarExpressao(arg, emptySet()))
             } else {
                 val tipo = inferirTipo(arg)
                 exigirTipoImprimivel(tipo, arg)
