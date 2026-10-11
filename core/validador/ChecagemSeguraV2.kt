@@ -2,6 +2,7 @@ package co.adilson889.typec.validador
 
 import co.adilson889.typec.ast.*
 import co.adilson889.typec.semantica.TiposNumericos
+import co.adilson889.typec.semantica.TiposNativosC
 import java.math.BigInteger
 
 /**
@@ -184,9 +185,12 @@ class ChecagemSeguraV2(private val fonte: String) {
                     if (expr.operador == "%" &&
                         (!TiposNumericos.ehInteiro(a) || !TiposNumericos.ehInteiro(b)))
                         erro(expr, "operador de resto exige inteiros")
-                    TiposNumericos.resultadoAritmetico(a, b)
-                        ?: erro(expr, "operacao aritmetica exige numeros compativeis; " +
-                            "mistura de inteiros positivos e assinados requer conversao explicita")
+                    TiposNumericos.resultadoAritmetico(
+                        a, b, expr.operador,
+                        TiposNumericos.ehLiteralInteiroNaoNegativo(expr.esquerda),
+                        TiposNumericos.ehLiteralInteiroNaoNegativo(expr.direita)
+                    ) ?: erro(expr, "operacao aritmetica exige tipos numericos compativeis; " +
+                        "size_t so pode ser somado a outro tamanho ou literal inteiro nao negativo")
                 }
                 else -> null
             }
@@ -213,12 +217,12 @@ class ChecagemSeguraV2(private val fonte: String) {
                         "argumento " + (i+1) + " de " + expr.nome)
                 }
             } else expr.argumentos.forEach { tipo(it) }
-            f?.tipoRetorno
+            f?.tipoRetorno ?: TiposNativosC.retorno(expr.nome)
         }
         is AcessoIndice -> {
             val indice = tipo(expr.indice)
             if (indice != null && !escalar(indice) || indice != null &&
-                indice.base !in inteiros)
+                indice.base !in inteiros && indice.base != TipoDado.TAMANHO)
                 erro(expr.indice, "indice de array deve ser inteiro")
             val t = tipo(expr.array)
             when {
@@ -303,7 +307,11 @@ class ChecagemSeguraV2(private val fonte: String) {
                     n.valor?.let { conferir(esperado,tipo(it),it,"retorno") }
                 }
             }
-            is ComandoImprimir -> n.argumentos.forEach { tipo(it) }
+            is ComandoImprimir -> n.argumentos.forEach {
+                val t = tipo(it)
+                if (t?.base == TipoDado.PONTEIRO_OPACO)
+                    erro(it, "escreva nao aceita ponteiro nativo diretamente")
+            }
             is ComandoLer -> tipo(n.alvo)
             is ExpressaoComando -> tipo(n.expressao)
             is ComandoSe -> {
