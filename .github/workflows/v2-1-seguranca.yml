@@ -16,6 +16,7 @@ on:
       - feature/v2-11-matriz-sanitizadores
       - feature/v2-12-seja-inferencia-local
       - feature/v2-12-1-revisao-escopos-escolha
+      - feature/v2-12-2-revisao-para-cada
   pull_request:
   workflow_dispatch:
 
