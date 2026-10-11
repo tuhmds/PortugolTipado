@@ -596,20 +596,25 @@ class Parser(
                     avancar()
                     val valorCaso = parsearExpressao()
                     consumir(TipoToken.DOIS_PONTOS, "esperado ':' após valor do 'caso'")
-                    val corpo = mutableListOf<No>()
-                    while (!verifica(TipoToken.CASO) && !verifica(TipoToken.PADRAO) && !verifica(TipoToken.CHAVE_DIR)) {
-                        corpo.add(parsearComando())
+                    val corpo = comEscopoInferido {
+                        val comandos = mutableListOf<No>()
+                        while (!verifica(TipoToken.CASO) && !verifica(TipoToken.PADRAO) && !verifica(TipoToken.CHAVE_DIR)) {
+                            comandos.add(parsearComando())
+                        }
+                        comandos
                     }
                     casos.add(CasoEscolher(valorCaso, corpo, linhaCaso))
                 }
                 verifica(TipoToken.PADRAO) -> {
                     avancar()
                     consumir(TipoToken.DOIS_PONTOS, "esperado ':' após 'casocontrario'")
-                    val corpo = mutableListOf<No>()
-                    while (!verifica(TipoToken.CASO) && !verifica(TipoToken.PADRAO) && !verifica(TipoToken.CHAVE_DIR)) {
-                        corpo.add(parsearComando())
+                    padrao = comEscopoInferido {
+                        val comandos = mutableListOf<No>()
+                        while (!verifica(TipoToken.CASO) && !verifica(TipoToken.PADRAO) && !verifica(TipoToken.CHAVE_DIR)) {
+                            comandos.add(parsearComando())
+                        }
+                        comandos
                     }
-                    padrao = corpo
                 }
                 else -> throw ErroSintatico("esperado 'caso' ou 'casocontrario' dentro de 'escolha'", atual().linha, fonte, nomeArquivo)
             }
