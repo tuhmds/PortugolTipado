@@ -103,9 +103,9 @@ fun main(args: Array<String>) {
         val resolucao = Resolvedor(pacotes).resolver(programa, fonte, File(entrada))
         Validador(fonte).validar(resolucao.programa, resolucao.modulos)
         if (tipagemSeguraV2) {
-            co.adilson889.typec.validador.ChecagemSeguraV2(fonte)
-                .validar(resolucao.programa, resolucao.modulos)
             co.adilson889.typec.validador.AnaliseOwnershipV26(fonte)
+                .validar(resolucao.programa, resolucao.modulos)
+            co.adilson889.typec.validador.ChecagemSeguraV2(fonte)
                 .validar(resolucao.programa, resolucao.modulos)
         }
         val codigo = Transpilador(tipagemSegura = tipagemSeguraV2)
