@@ -153,6 +153,9 @@ class Parser(
             var profundidade = 0
             while (indice < tokens.size) {
                 val t = tokens[indice]
+                if (profundidade == 0 && (t.tipo == TipoToken.INICIO ||
+                    (t.tipo == TipoToken.FUNCAO &&
+                     tokens.getOrNull(indice + 1)?.tipo == TipoToken.INICIO))) break
                 if (profundidade == 0 && t.tipo == TipoToken.FUNCAO &&
                     tokens.getOrNull(indice + 1)?.tipo == TipoToken.IDENTIFICADOR &&
                     tokens.getOrNull(indice + 2)?.tipo == TipoToken.PARENTESE_ESQ) {
@@ -200,6 +203,9 @@ class Parser(
             var indice = 0
             while (indice < tokens.size) {
                 val token = tokens[indice]
+                if (profundidade == 0 && (token.tipo == TipoToken.INICIO ||
+                    (token.tipo == TipoToken.FUNCAO &&
+                     tokens.getOrNull(indice + 1)?.tipo == TipoToken.INICIO))) break
                 if (profundidade == 0 && token.tipo == TipoToken.INCLUA) {
                     posicao = indice
                     includes.add(parsearInclua())
