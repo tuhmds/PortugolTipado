@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: seja-v2-12-1
+  group: seja-v2-12-1-revisao-final
   cancel-in-progress: true
 
 jobs:
