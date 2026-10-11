@@ -5,6 +5,7 @@ import co.adilson889.typec.erros.ErroTypeC
 import co.adilson889.typec.erros.extrairLinha
 import co.adilson889.typec.lexer.Token
 import co.adilson889.typec.lexer.TipoToken
+import co.adilson889.typec.semantica.InferenciaSeja
 
 class ErroSintatico(mensagem: String, linha: Int, fonte: String, nomeArquivo: String = "main.port") :
 ErroTypeC(mensagem, linha, extrairLinha(fonte, linha))
@@ -19,6 +20,25 @@ class Parser(
 ) {
 
     private var posicao = 0
+
+    // Cada seja e convertido para DeclaracaoVariavel com tipo concreto.
+    private val escoposInferidos = mutableListOf<MutableMap<String, Tipo>>()
+    private val retornosDeclarados = mutableMapOf<String, Tipo>()
+
+    private fun tipoVisivel(nome: String): Tipo? =
+        escoposInferidos.asReversed().firstNotNullOfOrNull { it[nome] }
+
+    private fun registrarTipo(nome: String, tipo: Tipo) {
+        escoposInferidos.lastOrNull()?.set(nome, tipo)
+    }
+
+    private inline fun <T> comEscopoInferido(
+        iniciais: Map<String, Tipo> = emptyMap(), acao: () -> T
+    ): T {
+        escoposInferidos.add(iniciais.toMutableMap())
+        try { return acao() }
+        finally { escoposInferidos.removeAt(escoposInferidos.lastIndex) }
+    }
 
     private fun atual(): Token = tokens[posicao]
     private fun proximo(): Token = tokens.getOrElse(posicao + 1) { tokens.last() }
@@ -58,6 +78,9 @@ class Parser(
      */
     fun parsearTolerante(): ResultadoParse {
         erros.clear()
+        escoposInferidos.clear()
+        retornosDeclarados.clear()
+        escoposInferidos.add(mutableMapOf())
         val programa = parsearPrograma()
         return ResultadoParse(programa, erros.toList())
     }
@@ -190,13 +213,14 @@ class Parser(
         consumir(TipoToken.PARENTESE_DIR, "esperado ')' após 'inicio('")
         consumir(TipoToken.CHAVE_ESQ, "esperado '{' após 'inicio()'")
 
-        val comandos = mutableListOf<No>()
-        while (!verifica(TipoToken.CHAVE_DIR) && !fimDosTokens()) {
-            tentar(true) { comandos.add(parsearComando()) }
+        return comEscopoInferido {
+            val comandos = mutableListOf<No>()
+            while (!verifica(TipoToken.CHAVE_DIR) && !fimDosTokens()) {
+                tentar(true) { comandos.add(parsearComando()) }
+            }
+            consumir(TipoToken.CHAVE_DIR, "esperado '}' para fechar 'inicio()'")
+            BlocoInicio(comandos, linha)
         }
-
-        consumir(TipoToken.CHAVE_DIR, "esperado '}' para fechar 'inicio()'")
-        return BlocoInicio(comandos, linha)
     }
 
     private fun ehTokenDeTipo(tipo: TipoToken): Boolean = tipo in setOf(
@@ -273,7 +297,11 @@ class Parser(
             TipoToken.DISPENSAR -> { val l = atual().linha; avancar(); ComandoDispensar(l) }
             TipoToken.IGNORAR -> { val l = atual().linha; avancar(); ComandoIgnorar(l) }
             TipoToken.RETORNA -> parsearRetorna()
-            TipoToken.CONST -> parsearDeclaracoes()
+            TipoToken.CONST -> if (proximo().tipo == TipoToken.SEJA) {
+                avancar()
+                parsearSeja(ehConstante = true)
+            } else parsearDeclaracoes()
+            TipoToken.SEJA -> parsearSeja()
             else -> {
                 if (ehTokenDeTipo(atual().tipo)) {
                     parsearDeclaracoes()
@@ -288,12 +316,37 @@ class Parser(
 
     private fun parsearBloco(): List<No> {
         consumir(TipoToken.CHAVE_ESQ, "esperado '{'")
-        val comandos = mutableListOf<No>()
-        while (!verifica(TipoToken.CHAVE_DIR) && !fimDosTokens()) {
-            tentar(true) { comandos.add(parsearComando()) }
+        return comEscopoInferido {
+            val comandos = mutableListOf<No>()
+            while (!verifica(TipoToken.CHAVE_DIR) && !fimDosTokens()) {
+                tentar(true) { comandos.add(parsearComando()) }
+            }
+            consumir(TipoToken.CHAVE_DIR, "esperado '}'")
+            comandos
         }
-        consumir(TipoToken.CHAVE_DIR, "esperado '}'")
-        return comandos
+    }
+
+    /** V2.12: seja x = expressao vira uma declaracao C tipada. */
+    private fun parsearSeja(ehConstante: Boolean = false): DeclaracaoVariavel {
+        val linha = atual().linha
+        consumir(TipoToken.SEJA, "esperado 'seja'")
+        val nome = consumir(TipoToken.IDENTIFICADOR, "esperado nome apos 'seja'")
+        consumir(TipoToken.IGUAL, "'seja' exige inicializador: seja " + nome.texto + " = ...")
+        if (verifica(TipoToken.CHAVE_ESQ))
+            throw ErroSintatico("'seja' nao infere arrays literais; declare o tipo do array",
+                linha, fonte, nomeArquivo)
+        val valor = parsearExpressao()
+        val tipo = InferenciaSeja.inferir(valor, ::tipoVisivel) {
+            retornosDeclarados[it]
+        }
+        if (tipo == null || tipo.base == TipoDado.VAZIO ||
+            tipo.ehArray || tipo.ehArray2D || tipo.nomeStruct != null)
+            throw ErroSintatico(
+                "nao foi possivel inferir o tipo de '" + nome.texto +
+                    "' com seguranca; declare o tipo explicitamente",
+                linha, fonte, nomeArquivo)
+        registrarTipo(nome.texto, tipo)
+        return DeclaracaoVariavel(tipo, nome.texto, valor, linha, ehConstante)
     }
 
     private fun parsearDeclaracaoVariavel(): DeclaracaoVariavel {
@@ -370,6 +423,7 @@ class Parser(
             throw ErroSintatico("'const' precisa de um valor inicial (ex: const inteiro ${nome.texto} = 0)", linha, fonte, nomeArquivo)
         }
 
+        registrarTipo(nome.texto, tipo)
         return DeclaracaoVariavel(tipo, nome.texto, valorInicial, linha, ehConstante)
     }
 
@@ -585,13 +639,15 @@ class Parser(
 
         consumir(TipoToken.DOIS_PONTOS, "esperado ':' seguido do tipo de retorno após os parâmetros da função (ex: funcao soma(inteiro a, inteiro b): inteiro)")
         val tipoRetorno = parsearTipo()
+        retornosDeclarados[nome.texto] = tipoRetorno
 
         // Sem '{' após o tipo de retorno: declaração externa (função de lib incluída via 'inclua',
         // sem implementação em TypeC — só registra assinatura/tipo para inferência).
         // Opcionalmente pode ter '= NomeReal' (alias): o nome declarado é o apelido usado
         // no código TypeC, e NomeReal é o nome exato chamado no C gerado.
         if (verifica(TipoToken.CHAVE_ESQ)) {
-            val corpo = parsearBloco()
+            val iniciais = parametros.associate { it.nome to it.tipo }
+            val corpo = comEscopoInferido(iniciais) { parsearBloco() }
             return DeclaracaoFuncao(tipoRetorno, nome.texto, parametros, corpo, null, linha)
         }
 
