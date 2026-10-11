@@ -25,7 +25,10 @@ enum class TipoDado {
     INTEIRO_POSITIVO,
     INTEIRO_GIGANTE,
     DUPLO_LONGO,
-    TEMPO
+    TEMPO,
+    /** Tipos C internos: size_t nao e int; ponteiro generico nao e numero nem texto. */
+    TAMANHO,
+    PONTEIRO_OPACO
 }
 
 /** Representa um tipo, incluindo se é array (ex: inteiro[]) */
