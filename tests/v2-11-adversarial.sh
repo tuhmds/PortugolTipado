@@ -3,7 +3,8 @@
 set -euo pipefail
 PORT_JAR="${PORT_JAR:-core/build/libs/port.jar}"
 PORT_CC="${PORT_CC:-gcc}"
-read -r -a extras <<< "${PORT_CCFLAGS:-}"
+PORT_CCFLAGS="${PORT_CCFLAGS:-}"
+read -r -a extras <<< "$PORT_CCFLAGS"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
