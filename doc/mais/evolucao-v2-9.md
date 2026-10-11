@@ -26,11 +26,13 @@ funcao observar(const ponteiro endereco): vazio {
 }
 
 funcao inicio() {
-    ponteiro recurso = aloque(16)
+    ponteiro recurso = aloque_zerado(1, 16)
     observar(recurso)  // emprestimo nao transfere posse
     libere(recurso)    // o dono ainda libera
 }
 ~~~
+
+O exemplo utiliza memória zerada porque um ponteiro `const void*` pode ser usado para leitura; a alocação com `aloque` não inicializa os bytes.
 
 A forma C gerada para o parâmetro é `const void*`. Isso **não** adiciona acesso tipado aos dados apontados nem garante ausência de mutação indireta em código C externo. É um contrato conservador válido apenas para funções analisadas com corpo disponível.
 
