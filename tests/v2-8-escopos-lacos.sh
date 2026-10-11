@@ -223,4 +223,27 @@ funcao inicio() {
     }
 }'
 
+rejeitar "condicao_enquanto_move_ponteiro" "condicao nao pode transferir ownership" '
+funcao consumirEValidar(ponteiro p): logico {
+    libere(p)
+    retorne verdadeiro
+}
+funcao inicio() {
+    ponteiro p = aloque(16)
+    enquanto (consumirEValidar(p)) {
+    }
+}'
+
+rejeitar "condicao_se_move_ponteiro" "condicao nao pode transferir ownership" '
+funcao consumirEValidar(ponteiro p): logico {
+    libere(p)
+    retorne verdadeiro
+}
+funcao inicio() {
+    ponteiro p = aloque(16)
+    se (consumirEValidar(p)) {
+        escreva("nao")
+    }
+}'
+
 echo "V2.8: escopos e lacos verificados."
