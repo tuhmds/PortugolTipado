@@ -35,6 +35,7 @@ class MemoryManager(
     private val auxiliaresUsados = mutableSetOf<Auxiliar>()
     private var usaCopiaSegura = false
     private var usaJuncaoSegura = false
+    private var usaAvisoDestinoDesconhecido = false
 
     // Cabecalhos <...> que o codigo gerado realmente precisa
     private val cabecalhos = linkedSetOf<String>()
@@ -45,6 +46,7 @@ class MemoryManager(
         auxiliaresUsados.clear()
         usaCopiaSegura = false
         usaJuncaoSegura = false
+        usaAvisoDestinoDesconhecido = false
     }
 
     /** Cabecalhos necessarios pelo que foi emitido ate agora (chamadas e auxiliares). */
@@ -94,7 +96,7 @@ class MemoryManager(
      * porque nao ha como saber o tamanho real.
      */
     fun lerTexto(alvo: String, tamanhoConhecido: String?, ind: String): String {
-        require(tamanhoConhecido != null) { "leia(texto): capacidade do buffer precisa ser conhecida" }
+        require(tamanhoConhecido != null) { "Não é possível ler este texto sem saber quanto espaço tem." }
         pedir(Auxiliar.EXIGIR)
         return "${ind}while (tc_exigir_linha($alvo, $tamanhoConhecido) != 1) {\n" +
             "${ind}    fputs(\"Texto muito longo, tente novamente: \", stderr);\n" +
@@ -142,17 +144,29 @@ class MemoryManager(
     // -------------------------------------------------------------
 
     /** Copia limitada por sizeof. Devolve a chamada C (sem ';'). Trunca em vez de estourar. */
-    fun copiar(destino: String, origem: String): String {
+    fun copiar(destino: String, origem: String, limite: String = "sizeof($destino)"): String {
         usaCopiaSegura = true
         usar("string.h")
-        return "tc_copiar_texto($destino, sizeof($destino), $origem)"
+        return "tc_copiar_texto($destino, $limite, $origem)"
     }
 
     /** Concatenacao limitada por sizeof. Devolve a chamada C (sem ';'). Trunca em vez de estourar. */
-    fun concatenar(destino: String, origem: String): String {
+    fun concatenar(destino: String, origem: String, limite: String = "sizeof($destino)"): String {
         usaJuncaoSegura = true
         usar("string.h")
-        return "tc_juntar_texto($destino, sizeof($destino), $origem)"
+        return "tc_juntar_texto($destino, $limite, $origem)"
+    }
+
+    /**
+     * Compatibilidade da sintaxe no modo normal: código C gerado continua
+     * a compilar mesmo quando não é seguro alterar um destino externo.
+     * Nessa situação o programa termina com mensagem compreensível;
+     * nunca presume que um apontador desconhecido tem 256 bytes livres.
+     */
+    fun textoSemDestinoSeguro(): String {
+        usaAvisoDestinoDesconhecido = true
+        usar("stdio.h", "stdlib.h")
+        return "tc_texto_sem_espaco_garantido()"
     }
 
     // -------------------------------------------------------------
@@ -161,7 +175,7 @@ class MemoryManager(
 
     /** Texto C das funcoes auxiliares realmente usadas. Vazio se o programa nao le nada. */
     fun gerarAuxiliares(): String {
-        if (auxiliaresUsados.isEmpty() && !usaCopiaSegura && !usaJuncaoSegura) return ""
+        if (auxiliaresUsados.isEmpty() && !usaCopiaSegura && !usaJuncaoSegura && !usaAvisoDestinoDesconhecido) return ""
         val sb = StringBuilder("/* --- funcoes auxiliares PortugolTipado (seguranca) --- */\n\n")
         for (aux in Auxiliar.values()) {
             if (aux !in auxiliaresUsados) continue
@@ -177,10 +191,17 @@ class MemoryManager(
         }
         if (usaCopiaSegura) sb.append(AUX_COPIAR_SEGURO.trimIndent()).append("\n\n")
         if (usaJuncaoSegura) sb.append(AUX_JUNTAR_SEGURO.trimIndent()).append("\n\n")
+        if (usaAvisoDestinoDesconhecido) sb.append(AUX_DESTINO_DESCONHECIDO.trimIndent()).append("\n\n")
         return sb.toString()
     }
 
     companion object {
+        private const val AUX_DESTINO_DESCONHECIDO = """
+            static char *tc_texto_sem_espaco_garantido(void) {
+                fputs("Não é possível alterar este texto com segurança nesta versão.\\n", stderr);
+                exit(1);
+            }"""
+
         private const val AUX_COPIAR_SEGURO = """
             /* Copia limitada; memmove aceita sobreposicao. */
             static char *tc_copiar_texto(char *destino, size_t capacidade, const char *origem) {
