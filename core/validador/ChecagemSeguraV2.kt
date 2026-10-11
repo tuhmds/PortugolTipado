@@ -1,6 +1,7 @@
 package co.adilson889.typec.validador
 
 import co.adilson889.typec.ast.*
+import co.adilson889.typec.semantica.TiposNumericos
 import java.math.BigInteger
 
 /**
@@ -148,12 +149,15 @@ class ChecagemSeguraV2(private val fonte: String) {
         is OperacaoUnaria -> {
             val t = tipo(expr.operando)
             if (t != null) {
-                if (expr.operador == "!" && t.base != TipoDado.LOGICO)
+                if (expr.operador == "!" &&
+                    (!escalar(t) || t.base != TipoDado.LOGICO))
                     erro(expr, "negacao exige valor logico")
-                if (expr.operador == "-" && !numerico(t))
+                if (expr.operador == "-" && !TiposNumericos.ehNumerico(t))
                     erro(expr, "sinal negativo exige numero")
+                if (expr.operador == "-" && t.base == TipoDado.INTEIRO_POSITIVO)
+                    erro(expr, "negacao de inteiro positivo requer conversao explicita")
             }
-            t
+            t?.let { TiposNumericos.resultadoUnario(expr.operador, it) ?: it }
         }
         is OperacaoBinaria -> {
             val a = tipo(expr.esquerda)
@@ -177,23 +181,12 @@ class ChecagemSeguraV2(private val fonte: String) {
                     Tipo(TipoDado.LOGICO)
                 }
                 "+", "-", "*", "/", "%" -> {
-                    if (!numerico(a) || !numerico(b))
-                        erro(expr, "operacao aritmetica exige numeros")
                     if (expr.operador == "%" &&
-                        (a.base !in inteiros || b.base !in inteiros))
+                        (!TiposNumericos.ehInteiro(a) || !TiposNumericos.ehInteiro(b)))
                         erro(expr, "operador de resto exige inteiros")
-                    val positivo = TipoDado.INTEIRO_POSITIVO
-                    if (a.base in inteiros && b.base in inteiros &&
-                        (a.base == positivo) != (b.base == positivo))
-                        erro(expr, "mistura de inteiro positivo e assinado exige conversao explicita")
-                    val res = when {
-                        a.base in flutuantes || b.base in flutuantes ->
-                            listOf(a.base,b.base).filter { it in flutuantes }
-                                .maxBy { ordemReal(it) }
-                        a.base == positivo -> positivo
-                        else -> listOf(a.base,b.base).maxBy { ordemInteiro(it) }
-                    }
-                    Tipo(if (res == TipoDado.INTEIRO_CURTO) TipoDado.INTEIRO else res)
+                    TiposNumericos.resultadoAritmetico(a, b)
+                        ?: erro(expr, "operacao aritmetica exige numeros compativeis; " +
+                            "mistura de inteiros positivos e assinados requer conversao explicita")
                 }
                 else -> null
             }
