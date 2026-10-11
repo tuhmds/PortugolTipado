@@ -127,7 +127,7 @@ funcao observar(const ponteiro ref): vazio {
     escreva("B")
 }
 funcao inicio() {
-    ponteiro p = aloque(16)
+    ponteiro p = aloque_zerado(1, 16)
     observar(p)
     libere(p)
     escreva("A")
@@ -141,7 +141,7 @@ funcao passar(const ponteiro ref): vazio {
     observar(ref)
 }
 funcao inicio() {
-    ponteiro recurso = aloque(32)
+    ponteiro recurso = aloque_zerado(1, 32)
     passar(recurso)
     libere(recurso)
 }'
@@ -154,7 +154,7 @@ funcao consumir(ponteiro p): vazio {
     libere(p)
 }
 funcao inicio() {
-    ponteiro a = aloque(8)
+    ponteiro a = aloque_zerado(1, 8)
     observar(a)
     consumir(a)
     escreva("2")
