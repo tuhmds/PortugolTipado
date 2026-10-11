@@ -94,7 +94,16 @@ class Resolvedor(private val pastaPacotes: File?) {
         try {
             val texto = ficheiro.readText()
             val modulo = try {
-                val bruto = Parser(tokenizarFonte(texto), texto, nomeParaErros).parsear()
+                val tokens = tokenizarFonte(texto)
+                val preview = Parser(tokens, texto, nomeParaErros)
+                    .coletarIncludesParaInferencia()
+                // Dependencias transitivas ficam disponiveis para inferencia
+                // dos modulos, inclusive funcoes declaradas mais tarde.
+                resolverIncludes(preview, texto, ficheiro.absoluteFile.parentFile)
+                val assinaturas = carregados.values.flatMap { it.declaracoesGlobais }
+                    .filterIsInstance<DeclaracaoFuncao>()
+                    .associate { it.nome to it.tipoRetorno }
+                val bruto = Parser(tokens, texto, nomeParaErros, assinaturas).parsear()
                 val resolvido = resolverIncludes(bruto, texto, ficheiro.absoluteFile.parentFile)
                 val submodulos = ArrayList<Programa>()
                 for (sub in resolvido.includes.filter { it.ehArquivoLocal }) {
