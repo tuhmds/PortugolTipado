@@ -17,6 +17,7 @@ on:
       - feature/v2-12-seja-inferencia-local
       - feature/v2-12-1-revisao-escopos-escolha
       - feature/v2-12-2-revisao-para-cada
+      - feature/v2-13-assinaturas-antecipadas
   pull_request:
   workflow_dispatch:
 
