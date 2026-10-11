@@ -180,6 +180,7 @@ class Transpilador(
         }
         tiposVariaveis.clear()
         assinaturasFuncoes.clear()
+        retornosFuncoes.clear()
         structs.clear()
         aliasesExternos.clear()
         usouStrcmp = false
