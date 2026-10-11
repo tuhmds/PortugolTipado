@@ -1,0 +1,33 @@
+name: V2.5 - tipos nativos do C
+
+on:
+  push:
+    branches:
+      - feature/v2-5-tipos-nativos-c
+  workflow_dispatch:
+
+concurrency:
+  group: v2-5-tipos-nativos
+  cancel-in-progress: true
+
+jobs:
+  kotlin-gcc-regressoes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar compilador Kotlin
+        working-directory: core
+        run: gradle fatJar --no-daemon
+      - name: Regressao de tipagem V2.2
+        run: bash tests/v2-2-tipos.sh
+      - name: Regressao de inferencia V2.3
+        run: bash tests/v2-3-inferencia.sh
+      - name: Regressao de inferencia V2.4
+        run: bash tests/v2-4-inferencia-segura.sh
+      - name: Regressao de tipos nativos V2.5
+        run: bash tests/v2-5-tipos-nativos.sh
