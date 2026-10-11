@@ -9,6 +9,7 @@ Depois das versões V2.1 a V2.9, a prioridade foi revisar as interações entre 
 ## Defeitos e correções
 
 - **Estado entre funções:** o transpilador acumulava símbolos locais/paramétricos de funções anteriores em `tiposVariaveis`. A V2.10 salva e restaura a tabela e os buffers ao compilar cada função, inclusive quando ocorre um erro.
+- **Compilações sucessivas com o mesmo transpilador:** a tabela de retornos de funções também é reiniciada para não preservar assinaturas de outro programa.
 - **Escopo do cabeçalho `para`:** uma variável declarada no inicializador do laço ficava registrada depois do laço na inferência de tipos C. A V2.10 restaura símbolos e buffers ao sair do `para`.
 - **Sombreamento não ponteiro / ponteiro:** a análise de ownership rastreava apenas os nomes de ponteiros, mesmo quando uma declaração de `inteiro` ou outro tipo ocultava o ponteiro dentro do escopo. Agora o nome externo fica invisível durante o bloco, mas sua posse continua registrada por identificador e é restaurada ao sair. Uma tentativa de `libere` sobre a variável não ponteiro não é confundida com a liberação do recurso externo.
 - **Escopo de `para` no ownership:** nomes de variáveis do inicializador também são restaurados após o laço, evitando perder a identidade de um ponteiro externo.
