@@ -1,0 +1,47 @@
+name: V2.12 - seja com inferencia local
+
+on:
+  push:
+    branches:
+      - feature/v2-12-seja-inferencia-local
+  workflow_dispatch:
+
+concurrency:
+  group: seja-v2-12
+  cancel-in-progress: true
+
+jobs:
+  kotlin-c-e-regressoes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar compilador Kotlin
+        working-directory: core
+        run: gradle fatJar --no-daemon
+      - name: Tipagem V2.2
+        run: bash tests/v2-2-tipos.sh
+      - name: Numericos V2.3
+        run: bash tests/v2-3-inferencia.sh
+      - name: Inferencia V2.4
+        run: bash tests/v2-4-inferencia-segura.sh
+      - name: Tipos C V2.5
+        run: bash tests/v2-5-tipos-nativos.sh
+      - name: Ownership V2.6
+        run: bash tests/v2-6-ownership.sh
+      - name: Fluxo V2.7
+        run: bash tests/v2-7-fluxo.sh
+      - name: Escopos V2.8
+        run: bash tests/v2-8-escopos-lacos.sh
+      - name: Borrowing V2.9
+        run: bash tests/v2-9-saidas-emprestimos.sh
+      - name: Auditoria V2.10
+        run: bash tests/v2-10-auditoria.sh
+      - name: Adversarial V2.11
+        run: bash tests/v2-11-adversarial.sh
+      - name: Seja V2.12
+        run: bash tests/v2-12-seja.sh
