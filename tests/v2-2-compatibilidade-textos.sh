@@ -17,7 +17,9 @@ executar() {
     cat "$TMP/$nome.c" >&2
     exit 1
   fi
-  echo "OK compatibilidade: $nome"
+  java -cp "$JAR" co.adilson889.typec.diagnostico.CompatibilidadeTextoKt \
+    "$TMP/$nome.port" "$esperado" "$entrada"
+  echo "OK compatibilidade C/interpretador: $nome"
 }
 
 rejeitar_seguro() {
