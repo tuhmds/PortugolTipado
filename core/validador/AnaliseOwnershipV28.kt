@@ -170,9 +170,21 @@ class AnaliseOwnershipV28(private val fonte: String) {
         examinar(a.valor, t, emLaco)
     }
 
+    /**
+     * A condicao pode ser reavaliada (ou ignorada) e nao pode transferir
+     * recursos. Sem isso, a segunda avaliacao de enquanto pode usar um
+     * ponteiro ja transferido na primeira.
+     */
+    private fun condicaoSemTransferencia(expr: No, t: Trilha, emLaco: Boolean) {
+        val caminho = t.copia()
+        examinar(expr, caminho, emLaco)
+        if (caminho.recursos != t.recursos || caminho.nomes != t.nomes)
+            erro(expr, "condicao nao pode transferir ownership nesta versao")
+    }
+
     private fun condicional(c: ComandoSe, t: Trilha, emLaco: Boolean, retornaPonteiro: Boolean) {
         val original = t.copia()
-        examinar(c.condicao, original, emLaco)
+        condicaoSemTransferencia(c.condicao, original, emLaco)
         val saidas = mutableListOf<Trilha>()
         val ramos = listOf(c.entao) + c.senaoSe.map { it.segundo }
         for (cmds in ramos) {
@@ -180,7 +192,7 @@ class AnaliseOwnershipV28(private val fonte: String) {
             bloco(cmds, ramo, emLaco, retornaPonteiro=retornaPonteiro, escopoLocal=true)
             saidas.add(ramo)
         }
-        c.senaoSe.forEach { examinar(it.primeiro, original, emLaco) }
+        c.senaoSe.forEach { condicaoSemTransferencia(it.primeiro, original, emLaco) }
         val alternativa = original.copia()
         if (c.senao != null) bloco(c.senao, alternativa, emLaco, retornaPonteiro=retornaPonteiro, escopoLocal=true)
         saidas.add(alternativa)
@@ -203,7 +215,7 @@ class AnaliseOwnershipV28(private val fonte: String) {
         n: No, corpo: List<No>, t: Trilha, condicoes: List<No> = emptyList(),
         retornaPonteiro: Boolean = false
     ) {
-        condicoes.forEach { examinar(it, t, true) }
+        condicoes.forEach { condicaoSemTransferencia(it, t, true) }
         val copia = t.copia()
         bloco(corpo, copia, true, retornaPonteiro=retornaPonteiro, escopoLocal=true)
         if (copia.recursos != t.recursos || copia.nomes != t.nomes)
@@ -259,13 +271,13 @@ class AnaliseOwnershipV28(private val fonte: String) {
                 is ComandoParaCada -> {
                     if (ponteiro(n.tipoElemento))
                         erro(n, "ponteiro em cada exige analise de lifetime")
-                    examinar(n.array, t, true)
+                    condicaoSemTransferencia(n.array, t, true)
                     loop(n, n.corpo, t, retornaPonteiro=retornaPonteiro)
                 }
                 is ComandoEscolher -> {
-                    examinar(n.valor, t, true)
+                    condicaoSemTransferencia(n.valor, t, true)
                     for (caso in n.casos) {
-                        examinar(caso.valor, t, true)
+                        condicaoSemTransferencia(caso.valor, t, true)
                         val copia = t.copia()
                         bloco(caso.corpo, copia, true, true, retornaPonteiro, escopoLocal=true)
                         if (copia.recursos != t.recursos || copia.nomes != t.nomes)
