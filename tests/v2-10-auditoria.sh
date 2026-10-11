@@ -101,8 +101,10 @@ funcao inicio() {
 
 rejeitar "borrow_sombra_nao_ponteiro" "nao e permitido ocultar parametro ponteiro emprestado" '
 funcao observar(const ponteiro item): vazio {
-    inteiro item = 42
-    escreva(item)
+    se (verdadeiro) {
+        inteiro item = 42
+        escreva(item)
+    }
 }
 funcao inicio() {}'
 
